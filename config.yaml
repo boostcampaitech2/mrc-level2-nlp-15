@@ -1,6 +1,7 @@
 # replacing arguments.py
 data:
   dataset_name: /opt/ml/data/train_dataset
+  test_dataset_name: /opt/ml/data/test_dataset
   overwrite_cache: false
   preprocessing_num_workers: null
   max_seq_length: 384
