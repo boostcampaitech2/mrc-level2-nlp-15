@@ -19,7 +19,7 @@ baseline:
   tokenizer_name: null
 
 custom_model:
-  model_name_or_path: klue/roberta-base
+  model_name_or_path: klue/roberta-large
   save_steps: 100
   num_train_epochs: 3
   learning_rate: 0.00005

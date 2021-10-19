@@ -140,3 +140,4 @@ cython_debug/
 # clones
 baseline
 ke-t5
+wandb
