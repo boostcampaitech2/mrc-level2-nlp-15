@@ -33,3 +33,13 @@ Text Generation하는 걸 이용해서 거기에다가 question을 생성해서 
 
 - [ ] Ke-T5: 안영진
 
+
+
+---
+
+## Ensemble Method
+
+- Retrieval Method에서 ensemble을 해야 하나?
+- Classification 단계에서 ensemble을 해야 하나? 근데 Generation이 들어가면 어떻게 될 지 잘 모르겠어요. 
+  - 정답 단어를 가지고 hard voting을 해야 할 것 같음
+  - 아니면 정답을 random으로 뽑게 ㅋㅋㅋㅋㅋㅋ
