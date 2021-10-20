@@ -27,3 +27,4 @@ custom_model:
   warmup_steps: 300
   weight_decay: 0.01
   validation: false
+  max_length: 512
