@@ -26,3 +26,4 @@ custom_model:
   batch_size: 32
   warmup_steps: 300
   weight_decay: 0.01
+  validation: false
