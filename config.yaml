@@ -28,3 +28,4 @@ custom_model:
   weight_decay: 0.01
   validation: false
   max_length: 512
+  DEBUG: true
