@@ -23,7 +23,7 @@ Text Generation하는 걸 이용해서 거기에다가 question을 생성해서 
 ## Retrieval
 
 - [ ] Elasticsearch: 전재영, 남세현
-- [ ] 베이스라인에 있는 TFIDF 대신에 BM25 시도: 김준홍
+- [ ] 베이스라인에 있는 TFIDF 대신에 BM25 시도. 다만 BM25 종류가 [okapi-bm25 외에도 가지각각인 듯](https://github.com/dorianbrown/rank_bm25): 김준홍
 - [ ] Dense Passage Retriever(DPR). Trainset에서 wiki에서 잘 찾아오는지 그걸 해보면서 이해하는 중: 김현수, 남세현
 - [ ] [ColBERT 2020](https://github.com/stanford-futuredata/ColBERT)
 
