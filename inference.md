@@ -1,6 +1,8 @@
 ## PororoMRC Inference
 - Baseline과 거의 비슷하고, run_mrc/main 함수만 조금 수정했습니다.
 - Scoring을 위해 변형하기 위해 PororoMRC관련 Class 추가
+    - BrainRobertaHubInterface_sub: predict_span 수정
+    - BrainRobertaModel_sub: return BrainRobertaHubInterface_sub로 수정
 
 ```python
 import logging
