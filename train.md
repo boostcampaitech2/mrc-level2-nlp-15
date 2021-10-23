@@ -1,3 +1,7 @@
+### Custom Train -> Augmentation Data 삽입하여 Reader 훈련
+- 추가한 부분에 '#추가"삽입함, -> ctrl+f로  확인해보기
+
+```python
 import logging
 import os
 import sys
@@ -32,8 +36,6 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-
-### Custom Train -> Augmentation Data 삽입하여 Reader 훈련
 def main():
     # 가능한 arguments 들은 ./arguments.py 나 transformer package 안의 src/transformers/training_args.py 에서 확인 가능합니다.
     # --help flag 를 실행시켜서 확인할 수 도 있습니다.
@@ -414,3 +416,4 @@ def run_mrc(
 
 if __name__ == "__main__":
     main()
+```
