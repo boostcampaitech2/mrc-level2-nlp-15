@@ -8,7 +8,7 @@
 
 ### 과정
 1. PororoMRC: inference과정에서 mrc reader 부분을 PororoMRC로 수정  
-  1-1. retrieval에서 k가 1보다 클 경우 context를 합쳐주는 구문에서 ' '.join -> '♧'.join으로 수정
+  - retrieval에서 k가 1보다 클 경우 context를 합쳐주는 구문에서 ' '.join -> '♧'.join으로 수정
 ```python
                 tmp = {
                     # Query와 해당 id를 반환합니다.
@@ -20,10 +20,10 @@
                         [self.contexts[pid] for pid in doc_indices[idx]]
                     ),
 ```
-  1-2. inference만 수정한 후 baseline와 동일하게 진행  
+  - inference만 수정한 후 baseline와 동일하게 진행  
 2. QG: Question_Generation.ipynb에서 조건에 맞도록 Data 추가 -> train.py를 추가한 데이터를 함께 활용할 수 있도록 수정하여 활용.  
-  2-1. Question_Generation.ipynb에서 csv형태로 augmentation data 저장  
-  2-2. train만 수정한 후 baseline과 동일하게 진행  
+  - Question_Generation.ipynb에서 csv형태로 augmentation data 저장  
+  - train만 수정한 후 baseline과 동일하게 진행  
   
 ### 결과
 1. PororoMRC
