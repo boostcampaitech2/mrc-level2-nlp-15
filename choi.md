@@ -16,7 +16,7 @@
                     "id": example["id"],
                     # Retrieve한 Passage의 id, context를 반환합니다.
                     "context_id": doc_indices[idx],
-                    "context": " ".join(  # 기존에는 ' '.join()
+                    "context": "♧".join(  # 기존에는 ' '.join()
                         [self.contexts[pid] for pid in doc_indices[idx]]
                     ),
 ```
@@ -27,6 +27,7 @@
   
 ### 결과
 1. PororoMRC
+
 |Experiments|Top-k|Epoch|Valid-EM|Valid-F1|Test-EM|Test-F1|
 |---|---|---|---|---|---|---|
 |Baseline|1|3|21.666|25.664|16.250|26.210|
@@ -40,6 +41,7 @@
 - 혹여나, Bias가 높은 KorQuAD로 인해서 성능이 오히려 떨어질 수도 있다.
 
 2. Question Generation
+
 |Experiments|Top-k|Epoch|Valid-EM|Valid-F1|Test-EM|Test-F1|
 |---|---|---|---|---|---|---|
 |Baseline|20|2|37.5|46.101|42.920|54.653|
