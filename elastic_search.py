@@ -1,4 +1,4 @@
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, helpers
 import pandas as pd
 from tqdm import tqdm
 import time
@@ -13,8 +13,8 @@ class elastic:
         except:
             pass
         self.context_path = context_path
-        self.es = Elasticsearch()
-        self.index_setting = INDEX_SETTINGS = {
+        self.es = Elasticsearch(timeout=100, max_retries=10, retry_on_timeout=True)
+        self.index_setting = {
             "settings": {
                 "index": {
                     "analysis": {
@@ -47,20 +47,20 @@ class elastic:
     def build_elatic(self):
         with open(self.context_path) as file:
             json_data = json.load(file)
-        jsones = {}
+        docs = []
         for i, j in json_data.items():
-            jsones[i] = {"text": j["text"], "title": j["title"]}
+            docs.append(
+                {
+                    "_index": "wikipedia",
+                    "_source": {"text": j["text"], "title": j["title"]},
+                }
+            )
 
         if self.es.indices.exists(self.index_name):
-            self.es.indices.delete(index=self.index_name)
-        self.es.indices.create(index=self.index_name, body=self.index_setting)
-
-        le = len(jsones.items())
-        for doc_id, doc in jsones.items():
-            self.es.index(index=self.index_name, id=int(doc_id), body=doc)
-            time.sleep(0.1)
-            if int(doc_id) % 100 == 0:
-                print(100 * int(doc_id) / le)
+            pass
+        else:
+            self.es.indices.create(index=self.index_name, body=self.index_setting)
+            helpers.bulk(self.es, docs)
 
     def retrieve(self, query_or_dataset, topk):
         datas = []
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     dataset = load_from_disk("../data/train_dataset")
     datasets = dataset["validation"]
-    x = elastic("toy_index")
+    x = elastic("wikipedia")
     x.build_elatic()
     p = x.retrieve(datasets, 3)
     print(p.head())
