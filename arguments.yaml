@@ -1,0 +1,28 @@
+# replacing arguments.py
+data:
+  dataset_name: /opt/ml/data/train_dataset
+  overwrite_cache: false
+  preprocessing_num_workers: null
+  max_seq_length: 512
+  pad_to_max_length: false
+  doc_stride: 128
+  max_answer_length: 30
+  eval_retrieval: true
+  num_clusters: 64
+
+train:
+  model_name_or_path: klue/roberta-base
+  config_name: null
+  tokenizer_name: null
+  output_dir: ./results
+  do_eval: true
+  do_train: true
+  evaluation_strategy: epoch
+  num_train_epochs: 5
+  per_device_train_batch_size: 12
+
+retrieval:
+  top_k_retrieval: 5
+  use_faiss: false
+  
+  
