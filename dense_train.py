@@ -199,8 +199,7 @@ def train(args):
         output = q_encoder(**p_inputs)
         phase_vectors.append(output)
 
-    x = random.randint(0, len(valid_dataset))
-    print(x)
+    
 
 
 if __name__ == "__main__":
