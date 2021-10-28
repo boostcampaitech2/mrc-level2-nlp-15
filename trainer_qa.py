@@ -18,7 +18,7 @@ Question-Answering task와 관련된 'Trainer'의 subclass 코드 입니다.
 
 from transformers import Trainer, is_datasets_available, is_torch_tpu_available
 from transformers.trainer_utils import PredictionOutput
-
+from loss import FocalLoss
 
 if is_datasets_available():
     import datasets
@@ -111,3 +111,11 @@ class QuestionAnsweringTrainer(Trainer):
             test_examples, test_dataset, output.predictions, self.args
         )
         return predictions
+
+    def compute_loss(self, model, inputs):
+        criterion = FocalLoss(gamma=0.5)  # 0.0 equals to CrossEntropy
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits = outputs[0]
+
+        return criterion(logits, labels)
