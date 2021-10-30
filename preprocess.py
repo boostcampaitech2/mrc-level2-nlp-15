@@ -5,6 +5,7 @@ import pandas as pd
 
 # reference: https://github.com/snoop2head/Mathpresso_Classification/blob/main/modules/preprocess_for_kobert.py
 def preprocess(text):
+    text = re.sub(r"##|#", " ", text)  # prevent tokenizer from splitting on # or ##
     text = re.sub(r"\\r|\\n|\n|\\t", " ", text)
     text = re.sub(r"\\", " ", text)
     text = re.sub(r"\s+", " ", text)
