@@ -11,10 +11,9 @@ def preprocess(text):
     return text
 
 
-def preprocess_json(data):
-    text_data = data["text"]
-    text_data = text_data.apply(lambda x: preprocess(x))
-    return text_data
+def preprocess_json(json_data: dict) -> dict:
+    json_data = json_data["text"].apply(lambda x: preprocess(x))
+    return json_data
 
 
 def preprocess_df(df: pd.DataFrame):
