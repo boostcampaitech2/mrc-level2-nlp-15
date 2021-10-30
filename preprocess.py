@@ -49,7 +49,7 @@ def preprocess_individual_dict(single_item: dict) -> dict:
     return single_item
 
 
-def preprocess_train_val(train_val: dict) -> list:
+def preprocess_train_val(train_val: dict) -> Dataset:
     """make preprocessed new train_val from datasets['train'] or datasets['validation'] from huggingface dataset"""
     new_train_val = list()
 
