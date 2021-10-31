@@ -1,0 +1,34 @@
+# replacing arguments.py
+data:
+  dataset_name: /opt/ml/data/train_dataset
+  test_dataset_name: /opt/ml/data/test_dataset
+  overwrite_cache: false
+  preprocessing_num_workers: null
+  max_seq_length: 384 # for baseline only
+  pad_to_max_length: false
+  doc_stride: 128
+  max_answer_length: 30
+  eval_retrieval: true
+  num_clusters: 64
+  top_k_retrieval: 1
+  use_faiss: false
+  data_path: /opt/ml/data
+  context_path: wikipedia_documents.json
+
+
+baseline:
+  model_name_or_path: klue/roberta-base
+  config_name: null
+  tokenizer_name: null
+
+custom_model:
+  model_name_or_path: klue/roberta-large
+  save_steps: 100
+  num_train_epochs: 3
+  learning_rate: 0.00005
+  batch_size: 32
+  warmup_steps: 300
+  weight_decay: 0.01
+  validation: false
+  max_length: 512 # for custom model
+  DEBUG: true
