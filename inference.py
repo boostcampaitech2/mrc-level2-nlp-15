@@ -34,7 +34,7 @@ from transformers import (
 
 from utils_qa import postprocess_qa_predictions, check_no_error
 from trainer_qa import QuestionAnsweringTrainer
-from retrieval import SparseRetrieval,DPR
+from retrieval import SparseRetrieval, DPR
 
 from arguments import (
     ModelArguments,
@@ -48,13 +48,10 @@ logger = logging.getLogger(__name__)
 def main():
     from transformers import AutoTokenizer
 
-
     # 가능한 arguments 들은 ./arguments.py 나 transformer package 안의 src/transformers/training_args.py 에서 확인 가능합니다.
     # --help flag 를 실행시켜서 확인할 수 도 있습니다.
 
-    parser = HfArgumentParser(
-        (ModelArguments, DataTrainingArguments, TrainingArguments)
-    )
+    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     training_args.do_train = True
@@ -81,14 +78,10 @@ def main():
     # AutoConfig를 이용하여 pretrained model 과 tokenizer를 불러옵니다.
     # argument로 원하는 모델 이름을 설정하면 옵션을 바꿀 수 있습니다.
     config = AutoConfig.from_pretrained(
-        model_args.config_name
-        if model_args.config_name
-        else model_args.model_name_or_path,
+        model_args.config_name if model_args.config_name else model_args.model_name_or_path,
     )
     tokenizer = AutoTokenizer.from_pretrained(
-        model_args.tokenizer_name
-        if model_args.tokenizer_name
-        else model_args.model_name_or_path,
+        model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
         use_fast=True,
     )
     model = AutoModelForQuestionAnswering.from_pretrained(
@@ -128,9 +121,7 @@ def run_sparse_retrieval(
 
     if data_args.use_faiss:
         retriever.build_faiss(num_clusters=data_args.num_clusters)
-        df = retriever.retrieve_faiss(
-            datasets["validation"], topk=data_args.top_k_retrieval
-        )
+        df = retriever.retrieve_faiss(datasets["validation"], topk=data_args.top_k_retrieval)
     else:
         df = retriever.retrieve(datasets["validation"], topk=data_args.top_k_retrieval)
     # test data 에 대해선 정답이 없으므로 id question context 로만 데이터셋이 구성됩니다.
@@ -178,9 +169,7 @@ def run_elastic_retrieval(
     retriever.build_elatic()
     if data_args.use_faiss:
         retriever.build_faiss(num_clusters=data_args.num_clusters)
-        df = retriever.retrieve_faiss(
-            datasets["validation"], topk=data_args.top_k_retrieval
-        )
+        df = retriever.retrieve_faiss(datasets["validation"], topk=data_args.top_k_retrieval)
     else:
         df = retriever.retrieve(datasets["validation"], topk=data_args.top_k_retrieval)
     # test data 에 대해선 정답이 없으므로 id question context 로만 데이터셋이 구성됩니다.
@@ -224,17 +213,15 @@ def run_DPR(
 ) -> DatasetDict:
 
     # Query에 맞는 Passage들을 Retrieval 합니다.
-    retriever = DPR(
-        tokenize_fn=tokenize_fn, data_path=data_path, context_path=context_path
+    retriever = DPR(tokenize_fn=tokenize_fn, data_path=data_path, context_path=context_path)
+    retriever.models(
+        "klue/bert-base", "retrieval_models/p_encoder.pt", "retrieval_models/p_encoder.pt"
     )
-    retriever.models('klue/bert-base','retrieval_models/p_encoder.pt','retrieval_models/p_encoder.pt')
     retriever.get_sparse_embedding()
 
     if data_args.use_faiss:
         retriever.build_faiss(num_clusters=data_args.num_clusters)
-        df = retriever.retrieve_faiss(
-            datasets["validation"], topk=data_args.top_k_retrieval
-        )
+        df = retriever.retrieve_faiss(datasets["validation"], topk=data_args.top_k_retrieval)
     else:
         df = retriever.retrieve(datasets["validation"], topk=data_args.top_k_retrieval)
 
@@ -290,9 +277,7 @@ def run_mrc(
     pad_on_right = tokenizer.padding_side == "right"
 
     # 오류가 있는지 확인합니다.
-    last_checkpoint, max_seq_length = check_no_error(
-        data_args, training_args, datasets, tokenizer
-    )
+    last_checkpoint, max_seq_length = check_no_error(data_args, training_args, datasets, tokenizer)
 
     # Validation preprocessing / 전처리를 진행합니다.
     def prepare_validation_features(examples):
@@ -306,7 +291,7 @@ def run_mrc(
             stride=data_args.doc_stride,
             return_overflowing_tokens=True,
             return_offsets_mapping=True,
-            return_token_type_ids=False, # roberta모델을 사용할 경우 False, bert를 사용할 경우 True로 표기해야합니다.
+            return_token_type_ids=False,  # roberta모델을 사용할 경우 False, bert를 사용할 경우 True로 표기해야합니다.
             padding="max_length" if data_args.pad_to_max_length else False,
         )
 
@@ -367,21 +352,16 @@ def run_mrc(
             output_dir=training_args.output_dir,
         )
         # Metric을 구할 수 있도록 Format을 맞춰줍니다.
-        formatted_predictions = [
-            {"id": k, "prediction_text": v} for k, v in predictions.items()
-        ]
+        formatted_predictions = [{"id": k, "prediction_text": v} for k, v in predictions.items()]
 
         if training_args.do_predict:
             return formatted_predictions
         elif training_args.do_eval:
             references = [
-                {"id": ex["id"], "answers": ex[answer_column_name]}
-                for ex in datasets["validation"]
+                {"id": ex["id"], "answers": ex[answer_column_name]} for ex in datasets["validation"]
             ]
 
-            return EvalPrediction(
-                predictions=formatted_predictions, label_ids=references
-            )
+            return EvalPrediction(predictions=formatted_predictions, label_ids=references)
 
     metric = load_metric("squad")
 
@@ -411,9 +391,7 @@ def run_mrc(
         )
 
         # predictions.json 은 postprocess_qa_predictions() 호출시 이미 저장됩니다.
-        print(
-            "No metric can be presented because there is no correct answer given. Job done!"
-        )
+        print("No metric can be presented because there is no correct answer given. Job done!")
 
     if training_args.do_eval:
         metrics = trainer.evaluate()
