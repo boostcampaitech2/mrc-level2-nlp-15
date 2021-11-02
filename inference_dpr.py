@@ -31,6 +31,7 @@ from transformers import (
 
 from utils_qa import postprocess_qa_predictions, check_no_error
 from trainer_qa import QuestionAnsweringTrainer
+from models import RobertaWithLstmForQuestionAnswering
 
 from arguments import (
     ModelArguments,
@@ -78,7 +79,7 @@ def main():
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
         use_fast=True,
     )
-    model = AutoModelForQuestionAnswering.from_pretrained(
+    model = RobertaWithLstmForQuestionAnswering.from_pretrained(
         model_args.model_name_or_path,
         from_tf=bool(".ckpt" in model_args.model_name_or_path),
         config=config,
@@ -88,7 +89,7 @@ def main():
     # retrieval: context의 개수가 top-k만큼으로 바뀐다.
     if data_args.eval_retrieval:  # trainset에 대한 evaluation을 진행
         df = pd.read_csv(
-            "/opt/ml/mrc-level2-nlp-15/b16_special_shuffle_elastic_ce40_t5.csv"
+            "/opt/ml/mrc-level2-nlp-15/retrieval_elastic_cross_ensemble_5_one_on_three.csv"
         )  ############ PATH!!!!!
         for i in range(len(df)):
             df["context_id"][i] = eval(df["context_id"][i])

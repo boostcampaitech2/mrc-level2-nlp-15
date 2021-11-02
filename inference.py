@@ -22,7 +22,7 @@ from datasets import (
     DatasetDict,
 )
 
-from transformers import AutoConfig, AutoModelForQuestionAnswering, AutoTokenizer
+from transformers import AutoConfig, AutoTokenizer
 
 from transformers import (
     DataCollatorWithPadding,
@@ -35,6 +35,7 @@ from transformers import (
 from utils_qa import postprocess_qa_predictions, check_no_error
 from trainer_qa import QuestionAnsweringTrainer
 from retrieval import SparseRetrieval, DPR
+from models import RobertaWithLstmForQuestionAnswering
 
 from arguments import (
     ModelArguments,
@@ -84,7 +85,7 @@ def main():
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
         use_fast=True,
     )
-    model = AutoModelForQuestionAnswering.from_pretrained(
+    model = RobertaWithLstmForQuestionAnswering.from_pretrained(
         model_args.model_name_or_path,
         from_tf=bool(".ckpt" in model_args.model_name_or_path),
         config=config,
