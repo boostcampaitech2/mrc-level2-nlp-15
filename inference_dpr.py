@@ -88,13 +88,22 @@ def main():
     # True일 경우 : run passage retrieval
     # retrieval: context의 개수가 top-k만큼으로 바뀐다.
     if data_args.eval_retrieval:  # trainset에 대한 evaluation을 진행
+        ############ NOTATE YOUR PATH TO THE DATASET!!!!! ############
         df = pd.read_csv(
-            "/opt/ml/mrc-level2-nlp-15/retrieval_elastic_cross_ensemble_5_one_on_three.csv"
-        )  ############ PATH!!!!!
-        for i in range(len(df)):
-            df["context_id"][i] = eval(df["context_id"][i])
-            df["answers"][i] = eval(df["answers"][i])
-
+            # "/opt/ml/mrc-level2-nlp-15/retrieval_elastic_cross_ensemble_5_one_on_three.csv" # validation
+            # "/opt/ml/mrc-level2-nlp-15/test_retrieval_elastic_cross_ensemble_5_one_on_one.csv"  # predict
+            "/opt/ml/mrc-level2-nlp-15/test_retrieval_elastic_cross_ensemble_5_one_on_three.csv"  # predict
+        )
+        # for i in range(len(df)):
+        #     df["context_id"][i] = eval(df["context_id"][i])
+        #     df["answers"][i] = eval(df["answers"][i])
+        if training_args.do_eval:
+            for i in range(len(df)):
+                df["context_id"][i] = eval(df["context_id"][i])
+                df["answers"][i] = eval(df["answers"][i])
+        elif training_args.do_predict:
+            for i in range(len(df)):
+                df["context_id"][i] = eval(df["context_id"][i])
         if training_args.do_predict:
             f = Features(
                 {

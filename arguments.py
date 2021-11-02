@@ -16,17 +16,12 @@ class ModelArguments:
     )
     config_name: Optional[str] = field(
         default=None,
-        metadata={
-            "help": "Pretrained config name or path if not the same as model_name"
-        },
+        metadata={"help": "Pretrained config name or path if not the same as model_name"},
     )
     tokenizer_name: Optional[str] = field(
         default=None,
-        metadata={
-            "help": "Pretrained tokenizer name or path if not the same as model_name"
-        },
+        metadata={"help": "Pretrained tokenizer name or path if not the same as model_name"},
     )
-
 
 
 @dataclass
@@ -84,10 +79,6 @@ class DataTrainingArguments:
     )
     top_k_retrieval: int = field(
         default=5,
-        metadata={
-            "help": "Define how many top-k passages to retrieve based on similarity."
-        },
+        metadata={"help": "Define how many top-k passages to retrieve based on similarity."},
     )
-    use_faiss: bool = field(
-        default=False, metadata={"help": "Whether to build with faiss"}
-    )
+    use_faiss: bool = field(default=False, metadata={"help": "Whether to build with faiss"})
