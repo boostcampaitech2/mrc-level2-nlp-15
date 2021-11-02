@@ -32,7 +32,6 @@ class RobertaWithLstmForQuestionAnswering(RobertaPreTrainedModel):
         self.num_labels = config.num_labels
 
         self.roberta = RobertaModel(config, add_pooling_layer=False)
-        self.qa_outputs = nn.Linear(config.hidden_size, config.num_labels)
         self.lstm= nn.LSTM(
             input_size= config.hidden_size,
             hidden_size= config.hidden_size,
@@ -84,8 +83,7 @@ class RobertaWithLstmForQuestionAnswering(RobertaPreTrainedModel):
 
         sequence_output = outputs[0]
         sequence_output, (last_hidden, last_cell) = self.lstm(sequence_output)
-        sequence_output = self.qa_head(sequence_output)
-        logits = self.qa_outputs(sequence_output)
+        logits = self.qa_head(sequence_output)
         start_logits, end_logits = logits.split(1, dim=-1)
         start_logits = start_logits.squeeze(-1).contiguous()
         end_logits = end_logits.squeeze(-1).contiguous()
