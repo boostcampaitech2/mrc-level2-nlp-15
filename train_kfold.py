@@ -33,7 +33,8 @@ from arguments import (
 
 
 logger = logging.getLogger(__name__)
-TOKENIZERS_PARALLELISM=False
+TOKENIZERS_PARALLELISM = False
+
 
 def main():
     # 가능한 arguments 들은 ./arguments.py 나 transformer package 안의 src/transformers/training_args.py 에서 확인 가능합니다.
@@ -134,7 +135,7 @@ def run_mrc(
     num_fold,
 ) -> NoReturn:
     # add num fold to output_dir
-    training_args.output_dir = f"{training_args.output_dir}/{num_fold}"
+    output_dir = f"{training_args.output_dir}/{num_fold}"
 
     # dataset을 전처리합니다.
     # training과 evaluation에서 사용되는 전처리는 아주 조금 다른 형태를 가집니다.
@@ -314,7 +315,7 @@ def run_mrc(
             features=features,
             predictions=predictions,
             max_answer_length=data_args.max_answer_length,
-            output_dir=training_args.output_dir,
+            output_dir=output_dir,
         )
         # Metric을 구할 수 있도록 Format을 맞춰줍니다.
         formatted_predictions = [
@@ -335,7 +336,9 @@ def run_mrc(
     metric = load_metric("squad")
 
     def compute_metrics(p: EvalPrediction):
-        return metric.compute(predictions=p.predictions, references=p.label_ids)
+        x = metric.compute(predictions=p.predictions, references=p.label_ids)
+        x = {"eval_exact_match": x["exact_match"], "eval_f1": x["f1"]}
+        return x
 
     # Trainer 초기화
     trainer = QuestionAnsweringTrainer(
@@ -369,7 +372,7 @@ def run_mrc(
         trainer.save_metrics("train", metrics)
         trainer.save_state()
 
-        output_train_file = os.path.join(training_args.output_dir, "train_results.txt")
+        output_train_file = os.path.join(output_dir, "train_results.txt")
 
         with open(output_train_file, "w") as writer:
             logger.info("***** Train results *****")
@@ -378,9 +381,7 @@ def run_mrc(
                 writer.write(f"{key} = {value}\n")
 
         # State 저장
-        trainer.state.save_to_json(
-            os.path.join(training_args.output_dir, "trainer_state.json")
-        )
+        trainer.state.save_to_json(os.path.join(output_dir, "trainer_state.json"))
 
     # Evaluation
     if training_args.do_eval:
