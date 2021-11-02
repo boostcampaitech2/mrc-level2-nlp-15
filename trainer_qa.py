@@ -112,27 +112,30 @@ class QuestionAnsweringTrainer(Trainer):
         )
         return predictions
 
-    def compute_loss(self, model, inputs,return_outputs=False):
 
-        start_positions = inputs.get("start_positions")
-        end_positions = inputs.get("end_positions")
-        if len(start_positions.size()) > 1:
-            start_positions = start_positions.squeeze(-1)
-        if len(end_positions.size()) > 1:
-            end_positions = end_positions.squeeze(-1)
+    # def compute_loss(self, model, inputs,return_outputs=False):
+    #
+    #     start_positions = inputs.get("start_positions")
+    #     end_positions = inputs.get("end_positions")
+    #     if len(start_positions.size()) > 1:
+    #         start_positions = start_positions.squeeze(-1)
+    #     if len(end_positions.size()) > 1:
+    #         end_positions = end_positions.squeeze(-1)
+    #
+    #     outputs = model(**inputs)
+    #
+    #     start_logits = outputs['start_logits']
+    #     end_logits = outputs['end_logits']
+    #
+    #     # train의 prepare_train_features함수에서 index안에 정답이 없으면 cls토큰을 정답위치로 해주기 떄문에
+    #     # 주석부분은 사용하지 않습니다!
+    #     # ignored_index = start_logits.size(1)
+    #     # start_positions = start_positions.clamp(0, ignored_index)
+    #     # end_positions = end_positions.clamp(0, ignored_index)
+    #     loss_fct = FocalLoss(gamma=0.8) # 원하는 loss를 사용하면 됩니다
+    #     start_loss = loss_fct(start_logits, start_positions)
+    #     end_loss = loss_fct(end_logits, end_positions)
+    #     total_loss = (start_loss + end_loss) / 2
+    #
+    #     return (total_loss, outputs) if return_outputs else total_loss
 
-        outputs = model(**inputs)
-        start_logits = outputs['start_logits']
-        end_logits = outputs['end_logits']
-
-        # train의 prepare_train_features함수에서 index안에 정답이 없으면 cls토큰을 정답위치로 해주기 떄문에
-        # 주석부분은 사용하지 않습니다!
-        # ignored_index = start_logits.size(1)
-        # start_positions = start_positions.clamp(0, ignored_index)
-        # end_positions = end_positions.clamp(0, ignored_index)
-        loss_fct = FocalLoss() # 원하는 loss를 사용하면 됩니다
-        start_loss = loss_fct(start_logits, start_positions)
-        end_loss = loss_fct(end_logits, end_positions)
-        total_loss = (start_loss + end_loss) / 2
-
-        return (total_loss, outputs) if return_outputs else total_loss

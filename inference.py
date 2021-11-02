@@ -34,7 +34,7 @@ from transformers import (
 
 from utils_qa import postprocess_qa_predictions, check_no_error
 from trainer_qa import QuestionAnsweringTrainer
-from retrieval import SparseRetrieval, DPR
+from retrieval import SparseRetrieval,DPR
 
 from arguments import (
     ModelArguments,
@@ -48,10 +48,6 @@ logger = logging.getLogger(__name__)
 def main():
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        "klue/roberta-base",
-        use_fast=False,
-    )
 
     # 가능한 arguments 들은 ./arguments.py 나 transformer package 안의 src/transformers/training_args.py 에서 확인 가능합니다.
     # --help flag 를 실행시켜서 확인할 수 도 있습니다.
@@ -178,8 +174,8 @@ def run_elastic_retrieval(
 ) -> DatasetDict:
 
     # Query에 맞는 Passage들을 Retrieval 합니다.
-    retriever = elastic("toy_index")
-
+    retriever = elastic("wikipedia")
+    retriever.build_elatic()
     if data_args.use_faiss:
         retriever.build_faiss(num_clusters=data_args.num_clusters)
         df = retriever.retrieve_faiss(
@@ -231,11 +227,7 @@ def run_DPR(
     retriever = DPR(
         tokenize_fn=tokenize_fn, data_path=data_path, context_path=context_path
     )
-    retriever.models(
-        "klue/bert-base",
-        "retrieval_models/p_encoder.pt",
-        "retrieval_models/p_encoder.pt",
-    )
+    retriever.models('klue/bert-base','retrieval_models/p_encoder.pt','retrieval_models/p_encoder.pt')
     retriever.get_sparse_embedding()
 
     if data_args.use_faiss:
@@ -314,7 +306,7 @@ def run_mrc(
             stride=data_args.doc_stride,
             return_overflowing_tokens=True,
             return_offsets_mapping=True,
-            return_token_type_ids=False,  # roberta모델을 사용할 경우 False, bert를 사용할 경우 True로 표기해야합니다.
+            return_token_type_ids=False, # roberta모델을 사용할 경우 False, bert를 사용할 경우 True로 표기해야합니다.
             padding="max_length" if data_args.pad_to_max_length else False,
         )
 

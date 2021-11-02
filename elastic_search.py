@@ -6,6 +6,8 @@ import json
 from typing import List, Tuple, NoReturn, Any, Optional, Union
 import random
 import re
+
+
 def preprocess(text):
     text = re.sub(r"\\r|\\n|\n|\\t", " ", text)
     text = re.sub(r"\\", " ", text)
@@ -54,6 +56,7 @@ class elastic:
       }
     }
 }
+
     def build_elatic(self):
         with open(self.context_path) as file:
             json_data = json.load(file)
@@ -98,6 +101,43 @@ class elastic:
 
         return pd.DataFrame(datas)
 
+    def retrieve_for_train(self,query_or_dataset,topk):
+        datas = []
+        j = 0
+        for i in tqdm(range(len(query_or_dataset))):
+            cp = {i: v for i, v in query_or_dataset[i].items()}
+            if "context" in query_or_dataset[i].keys() and "answers" in query_or_dataset[i].keys():
+                original_context = query_or_dataset[i]['context']
+
+            query = query_or_dataset[i]['question']
+            query = query.replace('/', '')
+            query = query.replace('~', ' ')
+            res = self.es.search(index=self.index_name, q=query, size=topk)
+            hits = res['hits']['hits']
+            context = []
+            score = []
+            document_id = []
+            for docu in hits:
+                context.append(docu['_source']['text'])
+            if preprocess(original_context) not in context:
+                x = random.randint(0,4)
+                context[x] = original_context
+            else:
+                x = context.index(preprocess(original_context))
+                context[x] = original_context
+            answer_start = cp['answers']['answer_start'][0]
+            for i,j in enumerate(context):
+                if j == original_context:
+                    break
+                else:
+                    answer_start += len(j)
+            cp['context'] = ''.join(context)#리스트를 사용하려면 join없이 그냥 context를 쓰면 됩니다.
+            cp['score'] = score
+            cp['document_id'] = document_id
+            cp['answers']['answer_start'] = [answer_start]
+            datas.append(cp)
+        return pd.DataFrame(datas)
+
     def get_relevant_doc(self, query: str, topk: Optional[int] = 1) -> Tuple[List, List]:
         query = query.replace('/', '')
         query = query.replace('~', ' ')
@@ -106,7 +146,7 @@ class elastic:
         context = []
         for docu in hits:
             context.append(docu['_source']['text'])
-        join_context = '<다음 문맥>'.join(context)
+        join_context = '///'.join(context)
         return join_context
 
 if __name__ == "__main__":

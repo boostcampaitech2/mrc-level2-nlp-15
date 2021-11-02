@@ -36,7 +36,7 @@ class RobertaWithLstmForQuestionAnswering(RobertaPreTrainedModel):
         self.lstm= nn.LSTM(
             input_size= config.hidden_size,
             hidden_size= config.hidden_size//2,
-            num_layers= 1,
+            num_layers= 2,
             dropout= 0.1,
             batch_first= True,
             bidirectional= True
