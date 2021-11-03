@@ -4,7 +4,7 @@ import sys
 
 from typing import List, Callable, NoReturn, NewType, Any
 import dataclasses
-from datasets import load_metric, load_from_disk, Dataset, DatasetDict
+from datasets import load_metric, load_from_disk, Dataset, DatasetDict, concatenate_datasets
 
 from transformers import AutoConfig, AutoModelForQuestionAnswering, AutoTokenizer
 
@@ -217,7 +217,14 @@ def run_mrc(
     if training_args.do_train:
         if "train" not in datasets:
             raise ValueError("--do_train requires a train dataset")
-        train_dataset = datasets["train"]
+
+        train_dataset = concatenate_datasets(
+            [
+                datasets["train"].flatten_indices(),
+                datasets["validation"].flatten_indices(),
+            ]
+        )  # train dev 를 합친 4192 개 질문에 대해 모두 테스트
+
         # es = elastic(INDEX_NAME='wikipedia')
         # es.build_elatic()
         # train_dataset = es.retrieve_for_train(train_dataset,topk=2)
