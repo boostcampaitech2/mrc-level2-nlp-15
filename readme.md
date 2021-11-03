@@ -41,7 +41,7 @@ python inference.py --output_dir ./outputs/test_dataset_512/ --dataset_name ../d
 
 File based -> 성능이 이게 더 좋음! ~~duo classifier은 아니고 dual encoder~~
 ```bash
-python inference_dpr.py --output_dir ./outputs/test_dataset_512_dpr/ --dataset_name ../data/test_dataset/ --model_name_or_path ./models/lstm_512/checkpoint-1700/ --do_predict --overwrite_output_dir
+python inference_dpr.py --output_dir ./outputs// --dataset_name ../data/test_dataset/ --model_name_or_path ./models/lstm_512_epoch_5_lr_2e-5_dr_0.2_batch_10/checkpoint-1700 --do_predict --overwrite_output_dir
 ```
 
 

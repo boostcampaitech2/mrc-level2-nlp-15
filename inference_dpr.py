@@ -42,6 +42,19 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
+def run_from_csv(csv_path):
+    df = pd.read_csv(csv_path)
+    f = Features(
+        {
+            "context": Value(dtype="string", id=None),
+            "id": Value(dtype="string", id=None),
+            "question": Value(dtype="string", id=None),
+        }
+    )
+    datasets = DatasetDict({"validation": Dataset.from_pandas(df, features=f)})
+    return datasets
+
+
 def main():
     # 가능한 arguments 들은 ./arguments.py 나 transformer package 안의 src/transformers/training_args.py 에서 확인 가능합니다.
     # --help flag 를 실행시켜서 확인할 수 도 있습니다.
@@ -93,8 +106,11 @@ def main():
             # "/opt/ml/mrc-level2-nlp-15/retrieval_elastic_cross_ensemble_5_one_on_three.csv"  # eval
             # "/opt/ml/mrc-level2-nlp-15/eval_b16_special_shuffle_elastic_ce40_top5.csv"  # eval
             # "/opt/ml/mrc-level2-nlp-15/test_retrieval_elastic_cross_ensemble_5_one_on_one.csv"  # predict
-            "/opt/ml/mrc-level2-nlp-15/test_retrieval_elastic_cross_ensemble_5_one_on_three.csv"  # predict # 이게 제일 성능이 좋음
+            # "/opt/ml/mrc-level2-nlp-15/test_retrieval_elastic_cross_ensemble_5_one_on_three.csv"  # predict # 이게 제일 성능이 좋음
+            # "/opt/ml/mrc-level2-nlp-15/test_df50to5_sehyun.csv" # predict
+            "/opt/ml/mrc-level2-nlp-15/test_df50to5_sehyun_no_sep.csv"  # predict
         )
+
         # for i in range(len(df)):
         #     df["context_id"][i] = eval(df["context_id"][i])
         #     df["answers"][i] = eval(df["answers"][i])
