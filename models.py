@@ -50,11 +50,11 @@ class RobertaWithLstmForQuestionAnswering(RobertaPreTrainedModel):
             input_size=config.hidden_size,
             hidden_size=config.hidden_size,
             num_layers=2,
-            dropout=0.2,
+            dropout=0.0,
             batch_first=True,
             bidirectional=True,
         )
-        self.qa_head = nn.Linear(config.hidden_size * 2, config.hidden_size)
+        self.qa_head = nn.Linear(config.hidden_size * 2, config.num_labels)
         self.init_weights()
 
     def forward(
@@ -97,9 +97,9 @@ class RobertaWithLstmForQuestionAnswering(RobertaPreTrainedModel):
 
         sequence_output = outputs[0]
         sequence_output, (last_hidden, last_cell) = self.lstm(sequence_output)
-        sequence_output = self.qa_head(sequence_output)
+        logits = self.qa_head(sequence_output)
         # No Activation function inbetween
-        logits = self.qa_outputs(sequence_output)
+        # logits = self.qa_outputs(sequence_output)
         start_logits, end_logits = logits.split(1, dim=-1)
         start_logits = start_logits.squeeze(-1).contiguous()
         end_logits = end_logits.squeeze(-1).contiguous()
