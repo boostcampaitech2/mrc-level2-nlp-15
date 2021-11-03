@@ -135,7 +135,9 @@ def run_mrc(
     num_fold,
 ) -> NoReturn:
     # add num fold to output_dir
-    output_dir = f"{training_args.output_dir}/{num_fold}"
+    if training_args.output_dir[-1] == str(num_fold - 1):
+        training_args.output_dir = training_args.output_dir[:-2]
+    training_args.output_dir = f"{training_args.output_dir}/{num_fold}"
 
     # dataset을 전처리합니다.
     # training과 evaluation에서 사용되는 전처리는 아주 조금 다른 형태를 가집니다.
@@ -315,7 +317,7 @@ def run_mrc(
             features=features,
             predictions=predictions,
             max_answer_length=data_args.max_answer_length,
-            output_dir=output_dir,
+            output_dir=training_args.output_dir,
         )
         # Metric을 구할 수 있도록 Format을 맞춰줍니다.
         formatted_predictions = [
@@ -372,7 +374,7 @@ def run_mrc(
         trainer.save_metrics("train", metrics)
         trainer.save_state()
 
-        output_train_file = os.path.join(output_dir, "train_results.txt")
+        output_train_file = os.path.join(training_args.output_dir, "train_results.txt")
 
         with open(output_train_file, "w") as writer:
             logger.info("***** Train results *****")
@@ -381,7 +383,9 @@ def run_mrc(
                 writer.write(f"{key} = {value}\n")
 
         # State 저장
-        trainer.state.save_to_json(os.path.join(output_dir, "trainer_state.json"))
+        trainer.state.save_to_json(
+            os.path.join(training_args.output_dir, "trainer_state.json")
+        )
 
     # Evaluation
     if training_args.do_eval:
