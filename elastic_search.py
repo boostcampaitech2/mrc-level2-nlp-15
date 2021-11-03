@@ -74,7 +74,7 @@ class elastic:
             self.es.indices.create(index=self.index_name, body=self.index_setting)
             helpers.bulk(self.es, docs)
 
-    def retrieve(self,query_or_dataset,topk):
+    def retrieve(self,query_or_dataset,topk) -> pd.DataFrame:
         datas = []
         for i in tqdm(range(len(query_or_dataset))):
             cp = {i: v for i, v in query_or_dataset[i].items()}
@@ -119,12 +119,14 @@ class elastic:
             document_id = []
             for docu in hits:
                 context.append(docu['_source']['text'])
+            # 정답이 없으면 랜던하게 한 곳에 정답을 넣음
             if preprocess(original_context) not in context:
-                x = random.randint(0,4)
+                x = random.randint(0,topk)
                 context[x] = original_context
             else:
                 x = context.index(preprocess(original_context))
                 context[x] = original_context
+            #정답의 인덱스를 찾기
             answer_start = cp['answers']['answer_start'][0]
             for i,j in enumerate(context):
                 if j == original_context:
