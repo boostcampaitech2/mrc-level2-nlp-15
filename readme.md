@@ -20,8 +20,8 @@ Top 3 / Top 5 -> Inference
 
 ## TODO
 - [ ] change the command into bash or config.yaml
-- [x] wiki EDA: Calculate number of maximum sequence length of the dataset
-- [ ] Apply KFold
+- [x] wiki EDA: Calculate number of maximum sequence length of the dataset -> 512가 평균;;;;
+- [x] Apply KFold
 - [ ] Concating the top 5 wikipedia corpus from elastic search -> depends on wiki EDA & elastic search top k value
 
 ### evaluating command
@@ -31,10 +31,14 @@ python inference_dpr.py --output_dir ./outputs/lstm_512_epoch_5_lr_2e-5_dr_0.2_b
 
 
 ### testing command
+
+Elastic Search top 5
 ```bash
 python inference.py --output_dir ./outputs/test_dataset_512/ --dataset_name ../data/test_dataset/ --model_name_or_path ./models/lstm_512/checkpoint-1700/ --do_predict --overwrite_output_dir
 ```
 
+
+File based -> 성능이 이게 더 좋음! ~~duo classifier은 아니고 dual encoder~~
 ```bash
 python inference_dpr.py --output_dir ./outputs/test_dataset_512_dpr/ --dataset_name ../data/test_dataset/ --model_name_or_path ./models/lstm_512/checkpoint-1700/ --do_predict --overwrite_output_dir
 ```

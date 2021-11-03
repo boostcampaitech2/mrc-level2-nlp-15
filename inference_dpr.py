@@ -90,10 +90,10 @@ def main():
     if data_args.eval_retrieval:  # trainset에 대한 evaluation을 진행
         ############ NOTATE YOUR PATH TO THE DATASET!!!!! ############
         df = pd.read_csv(
-            # "/opt/ml/mrc-level2-nlp-15/retrieval_elastic_cross_ensemble_5_one_on_three.csv"  # validation
-            "/opt/ml/mrc-level2-nlp-15/eval_b16_special_shuffle_elastic_ce40_top5.csv"  # validation
+            # "/opt/ml/mrc-level2-nlp-15/retrieval_elastic_cross_ensemble_5_one_on_three.csv"  # eval
+            # "/opt/ml/mrc-level2-nlp-15/eval_b16_special_shuffle_elastic_ce40_top5.csv"  # eval
             # "/opt/ml/mrc-level2-nlp-15/test_retrieval_elastic_cross_ensemble_5_one_on_one.csv"  # predict
-            # "/opt/ml/mrc-level2-nlp-15/test_retrieval_elastic_cross_ensemble_5_one_on_three.csv"  # predict
+            "/opt/ml/mrc-level2-nlp-15/test_retrieval_elastic_cross_ensemble_5_one_on_three.csv"  # predict # 이게 제일 성능이 좋음
         )
         # for i in range(len(df)):
         #     df["context_id"][i] = eval(df["context_id"][i])

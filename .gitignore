@@ -5,7 +5,7 @@ tmp
 /results/*
 /models
 /outputs
-*.csv
+# *.csv
 
 
 # Byte-compiled / optimized / DLL files
