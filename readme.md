@@ -1,22 +1,20 @@
 # Readme
 
 ### training command
-```bash
-python train.py --output_dir ./models/lstm_512 --per_device_train_batch_size 10 --max_seq_length 512 --evaluation_strategy steps --num_train_epochs 3 --eval_step 100 --metric_for_best_model exact_match --save_total_limit 5 --load_best_model_at_end --learning_rate 2e-5 --save_steps 100 --overwrite_output_dir
-```
-
 
 - Had to reduce learning rate for performance boost: lower the learning rate for lstm model, the better it is
 - Also, batch size reduced from 12 -> 10. I think this affects the performance therefore sequence length had to be sacrificed. 
 - max_seq_length 495, doc_stride 128, per_device_train_batch_size 12 is 32.347GB / 32.510GB GPU memory
 
 ```bash
-python train.py --output_dir ./models/lstm_512_epoch_5 --per_device_train_batch_size 11 --max_seq_length 512 --doc_stride 128 --evaluation_strategy steps --num_train_epochs 5 --eval_step 100 --metric_for_best_model exact_match --save_total_limit 5 --load_best_model_at_end --learning_rate 1e-5 --save_steps 100 --overwrite_output_dir
+(DROP_OUT_RATE = 0.2)
+
+python train.py --output_dir ./models/lstm_512_epoch_5 --per_device_train_batch_size 11 --max_seq_length 512 --doc_stride 128 --evaluation_strategy steps --num_train_epochs 5 --eval_step 100 --metric_for_best_model exact_match --save_total_limit 5 --load_best_model_at_end --learning_rate 2e-5 --save_steps 100 --overwrite_output_dir
 ```
 
-```bash
-python train.py --output_dir ./models/lstm_512_epoch_5_lr_15e-6 --per_device_train_batch_size 11 --max_seq_length 512 --doc_stride 128 --evaluation_strategy steps --num_train_epochs 5 --eval_step 100 --metric_for_best_model exact_match --save_total_limit 5 --load_best_model_at_end --learning_rate 1.5e-5 --save_steps 100 --overwrite_output_dir
-```
+Ground Truth -> Train
+(Ground Truth + Elastic Search로 뽑아낸 Negative 2개) -> Train
+Top 3 / Top 5 -> Inference
 
 
 
@@ -28,8 +26,9 @@ python train.py --output_dir ./models/lstm_512_epoch_5_lr_15e-6 --per_device_tra
 
 ### evaluating command
 ```bash
-python inference.py --output_dir ./outputs/eval_dataset_512/ --dataset_name ../data/train_dataset/ --model_name_or_path ./models/lstm_512/checkpoint-1700/ --do_eval --overwrite_output_dir
+python inference_dpr.py --output_dir ./outputs/lstm_512_epoch_5_lr_2e-5_dr_0.2_batch_10/ --dataset_name ../data/train_dataset/ --model_name_or_path ./models/lstm_512_epoch_5_lr_2e-5_dr_0.2_batch_10/checkpoint-1700 --do_eval --overwrite_output_dir
 ```
+
 
 ### testing command
 ```bash

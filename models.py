@@ -50,7 +50,7 @@ class RobertaWithLstmForQuestionAnswering(RobertaPreTrainedModel):
             input_size=config.hidden_size,
             hidden_size=config.hidden_size,
             num_layers=2,
-            dropout=0.0,
+            dropout=0.2,
             batch_first=True,
             bidirectional=True,
         )
