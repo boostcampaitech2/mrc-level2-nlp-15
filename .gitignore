@@ -3,6 +3,8 @@ custom
 KR-SBERT
 tmp
 /results/*
+models
+outputs
 
 
 # Byte-compiled / optimized / DLL files
