@@ -121,7 +121,7 @@ class elastic:
                 context.append(docu['_source']['text'])
             # 정답이 없으면 랜던하게 한 곳에 정답을 넣음
             if preprocess(original_context) not in context:
-                x = random.randint(0,topk)
+                x = random.randint(0,topk-1)
                 context[x] = original_context
             else:
                 x = context.index(preprocess(original_context))
