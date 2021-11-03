@@ -23,6 +23,7 @@ Top 3 / Top 5 -> Inference
 - [x] wiki EDA: Calculate number of maximum sequence length of the dataset -> 512가 평균;;;;
 - [x] Apply KFold
 - [ ] Concating the top 5 wikipedia corpus from elastic search -> depends on wiki EDA & elastic search top k value
+- [ ] Combine Train and Validation and submit without evaluation
 
 ### evaluating command
 ```bash
