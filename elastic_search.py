@@ -116,26 +116,28 @@ class elastic:
             query = query_or_dataset[i]["question"]
             query = query.replace("/", "")
             query = query.replace("~", " ")
-            res = self.es.search(index=self.index_name, q=query, size=topk)
+            res = self.es.search(index=self.index_name, q=query, size=topk + 1)  # get k + 1 results
             hits = res["hits"]["hits"]
-            context = []
+            retrieved_contexts = []
+            train_contexts = []
             score = []
             document_id = []
             for docu in hits:
-                context.append(docu["_source"]["text"])
-            if original_context not in context:
-                x = random.randint(0, 4)
-                context[x] = original_context
-            else:
-                x = context.index(original_context)
-                context[x] = original_context
+                retrieved_contexts.append(docu["_source"]["text"])
+
+            train_contexts.append(original_context)
+            if original_context not in retrieved_contexts:
+                # print(len(original_context), original_context)
+                # print(len(context), context)
+                # append first topk elements of retrieved_contexts to train_contexts
+                for i in range(topk):
+                    train_contexts.append(retrieved_contexts[i])
+            if original_context in retrieved_contexts:
+                retrieved_contexts.pop(retrieved_contexts.index(original_context))
+                for i in range(topk):
+                    train_contexts.append(retrieved_contexts[i])
             answer_start = cp["answers"]["answer_start"][0]
-            for i, j in enumerate(context):
-                if j == original_context:
-                    break
-                else:
-                    answer_start += len(j)
-            cp["context"] = "".join(context)  # 리스트를 사용하려면 join없이 그냥 context를 쓰면 됩니다.
+            cp["context"] = "".join(train_contexts)  # 리스트를 사용하려면 join없이 그냥 context를 쓰면 됩니다.
             cp["score"] = score
             cp["document_id"] = document_id
             cp["answers"]["answer_start"] = [answer_start]

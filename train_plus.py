@@ -33,7 +33,8 @@ from arguments import (
     ModelArguments,
     DataTrainingArguments,
 )
-from process import preprocess_train_val
+
+# from process import preprocess_train_val
 from elastic_search import elastic
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,7 @@ def main():
 
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    training_args.do_train = True
     print(model_args.model_name_or_path)
     # [참고] argument를 manual하게 수정하고 싶은 경우에 아래와 같은 방식을 사용할 수 있습니다
     # training_args.per_device_train_batch_size = 4
