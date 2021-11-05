@@ -31,7 +31,7 @@ import re
 """
 
 
-def proprecessing(text):
+def prsoprecessing(text):
     new_text = text.replace(r"\n\n", "")
     return new_text
 
@@ -44,14 +44,11 @@ class gold_train:
         valid_dataset = dataset["validation"]
 
         self.train_dataset = {}
-        self.train_dataset["context"] = [
-            proprecessing(string) for string in train_dataset["context"]
-        ]
+        self.train_dataset["context"] = train_dataset["context"]
         self.train_dataset["question"] = train_dataset["question"]
+
         self.valid_dataset = {}
-        self.valid_dataset["context"] = [
-            proprecessing(string) for string in valid_dataset["context"]
-        ]
+        self.valid_dataset["context"] = valid_dataset["context"]
         self.valid_dataset["question"] = valid_dataset["question"]
 
         self.tokenizer = AutoTokenizer.from_pretrained(args.model_name)
@@ -60,6 +57,7 @@ class gold_train:
         self.q_encoder = BertEncoder.from_pretrained(args.model_name)
         self.p_encoder.to(args.device)
         self.q_encoder.to(args.device)
+
         self.indexer = None  # build_faiss()로 생성합니다.
 
     def train(self, epochs, learning_rate, train_dataset=None):

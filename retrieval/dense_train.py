@@ -199,8 +199,6 @@ def train(args):
         output = q_encoder(**p_inputs)
         phase_vectors.append(output)
 
-    
-
 
 if __name__ == "__main__":
     import argparse
