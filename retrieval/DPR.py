@@ -14,39 +14,18 @@ from transformers import (
 )
 from torch.utils.data import SequentialSampler
 import json
-import yaml
 from torch.utils.data import Dataset
+from utils_qa import CustomSampler
 
 
 def seed():
-    torch.manual_seed(42)
-    torch.cuda.manual_seed(42)
-    np.random.seed(42)
-    random.seed(42)
-
-
-# Read config.yaml file
-with open("config.yaml") as infile:
-    SAVED_CFG = yaml.load(infile, Loader=yaml.FullLoader)
-    SAVED_CFG = dotdict(SAVED_CFG)
-
-# arguments setting
-data_args = dotdict(SAVED_CFG.data)
-model_args = dotdict(SAVED_CFG.custom_model)
-
-# adding additional arguments
-model_args.batch_size = 10
-model_args.num_rnn_layers = 2
-model_args.learning_rate = 2e-5
-model_args.num_folds = 4
-model_args.gamma = 1.0
-model_args.smoothing = 0.2
-model_args
+    torch.manual_seed(3532812018032770127)
+    torch.cuda.manual_seed(3532812018032770127)
+    np.random.seed(324)
+    random.seed(2021)
 
 
 class CustomDataset(Dataset):
-    """make custom dataset for dense retrieval"""
-
     def __init__(self, queries, passages, wiki_passages, max_len=512):
         self.queries = queries
         self.passages = np.array(passages)
@@ -81,6 +60,93 @@ class CustomDataset(Dataset):
             "quer_inputs": quer_inputs,
             "passage_inputs": pass_inputs,
         }
+
+
+class CustomDataset_Overflow(Dataset):
+    """
+    설명 적기
+    """
+
+    def __init__(self, queries, passages, wiki_passages, max_len=512):
+        self.queries = queries
+        self.passages = np.array(passages)
+        self.tokenizer = AutoTokenizer.from_pretrained("klue/bert-base")
+        self.max_seq_len = max_len
+        self.question_max_len = 64
+        self.wiki_passages = np.array(wiki_passages)
+
+    def __len__(self):
+        return len(self.queries)
+
+    def _return_train_dataset(self):
+        for i in range(len(self.queries)):
+            if i == 0:
+                q_seqs = self.tokenizer(
+                    self.queries[i],
+                    padding="max_length",
+                    truncation=True,
+                    return_tensors="pt",
+                )
+                p_seqs = self.tokenizer(
+                    self.passages[i],
+                    truncation=True,
+                    stride=128,
+                    padding="max_length",
+                    return_overflowing_tokens=True,
+                    return_offsets_mapping=True,
+                    return_tensors="pt",
+                )
+                p_seqs.pop("overflow_to_sample_mapping")
+                p_seqs.pop("offset_mapping")
+
+                for k in q_seqs.keys():
+                    q_seqs[k] = q_seqs[k].tolist()
+                    p_seqs[k] = p_seqs[k].tolist()
+            else:
+                tmp_q_seq = self.tokenizer(
+                    self.queries[i],
+                    padding="max_length",
+                    truncation=True,
+                    return_tensors="pt",
+                )
+                tmp_p_seq = self.tokenizer(
+                    self.passages[i],
+                    truncation=True,
+                    stride=128,
+                    padding="max_length",
+                    return_overflowing_tokens=True,
+                    return_offsets_mapping=True,
+                    return_tensors="pt",
+                )
+
+                tmp_p_seq.pop("overflow_to_sample_mapping")
+                tmp_p_seq.pop("offset_mapping")
+
+                for k in tmp_p_seq.keys():
+                    tmp_p_seq[k] = tmp_p_seq[k].tolist()
+                    tmp_q_seq[k] = tmp_q_seq[k].tolist()
+
+                for j in range(len(tmp_p_seq["input_ids"])):
+                    q_seqs["input_ids"].append(tmp_q_seq["input_ids"][0])
+                    q_seqs["token_type_ids"].append(tmp_q_seq["token_type_ids"][0])
+                    q_seqs["attention_mask"].append(tmp_q_seq["attention_mask"][0])
+                    p_seqs["input_ids"].append(tmp_p_seq["input_ids"][j])
+                    p_seqs["token_type_ids"].append(tmp_p_seq["token_type_ids"][j])
+                    p_seqs["attention_mask"].append(tmp_p_seq["attention_mask"][j])
+
+        for k in q_seqs.keys():
+            q_seqs[k] = torch.tensor(q_seqs[k])
+            p_seqs[k] = torch.tensor(p_seqs[k])
+
+        train_dataset = TensorDataset(
+            p_seqs["input_ids"],
+            p_seqs["attention_mask"],
+            p_seqs["token_type_ids"],
+            q_seqs["input_ids"],
+            q_seqs["attention_mask"],
+            q_seqs["token_type_ids"],
+        )
+        return train_dataset
 
 
 from torch.utils.data import DataLoader, TensorDataset
@@ -288,8 +354,17 @@ def main(dataset_path):
 
     passages = list([example["context"] for example in dataset["train"]])
     questions = list([example["question"] for example in dataset["train"]])
-    train_dataset = CustomDataset(questions, passages, search_corpus)
-    train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=False)
+
+    if args.dpr_method == "large_negative":
+        train_dataset = CustomDataset(questions, passages, search_corpus)
+        train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=False)
+    elif args.dpr_method == "overflow_with_no_truncation":
+        custom_dataset = CustomDataset_Overflow(questions, passages, search_corpus)
+        train_dataset = custom_dataset._return_train_dataset()
+        sampler = CustomSampler(train_dataset, args.per_device_train_batch_size)
+        train_dataloader = DataLoader(
+            train_dataset, batch_size=args.per_device_train_batch_size, sampler=sampler
+        )
 
     # load pre-trained model on cuda (if available)
     p_encoder = BertEncoder.from_pretrained(model_checkpoint)
