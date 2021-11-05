@@ -66,7 +66,6 @@ def main():
 
     training_args.do_train = True
     training_args.do_eval = False
-    training_args.per_device_eval_batch_size = 512
     print(f"model is from {model_args.model_name_or_path}")
     print(f"data is from {data_args.dataset_name}")
 
