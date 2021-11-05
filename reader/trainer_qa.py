@@ -111,7 +111,8 @@ class QuestionAnsweringTrainer(Trainer):
         predictions = self.post_process_function(
             test_examples, test_dataset, output.predictions, self.args
         )
-        return predictions
+        #Kfold를 위해 ouput도 return 해줍니다.
+        return predictions, output
 
     def compute_loss(self, model, inputs, return_outputs=False):
 
