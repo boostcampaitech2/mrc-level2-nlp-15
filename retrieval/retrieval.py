@@ -10,10 +10,10 @@ from tqdm.auto import tqdm
 from contextlib import contextmanager
 from typing import List, Tuple, NoReturn, Any, Optional, Union
 from elastic_search import elastic
-from torch.utils.data import (DataLoader, RandomSampler, TensorDataset)
+from torch.utils.data import DataLoader, RandomSampler, TensorDataset
 
 from sklearn.feature_extraction.text import TfidfVectorizer
-from  transformers import AutoTokenizer
+from transformers import AutoTokenizer
 from datasets import (
     Dataset,
     load_from_disk,
@@ -21,6 +21,7 @@ from datasets import (
 )
 
 from models import BertEncoder
+
 
 @contextmanager
 def timer(name):
@@ -204,7 +205,7 @@ class SparseRetrieval:
                 }
                 if "context" in example.keys() and "answers" in example.keys():
                     # validation 데이터를 사용하면 ground_truth context와 answer도 반환합니다.
-                    tmp["original_context"] = example["context"]+'///'
+                    tmp["original_context"] = example["context"] + "///"
                     tmp["answers"] = example["answers"]
                 total.append(tmp)
 
@@ -388,21 +389,19 @@ class SparseRetrieval:
 
         return D.tolist(), I.tolist()
 
+
 class DPR(SparseRetrieval):
-    def models(self,model_name,p_encoder_path,q_encoder_path):
+    def models(self, model_name, p_encoder_path, q_encoder_path):
         self.tokenizer = AutoTokenizer.from_pretrained(
-            model_name,
-            use_fast=False,
-            stride=64,
-            padding="max_length"
+            model_name, use_fast=False, stride=64, padding="max_length"
         )
         self.p_encoder = BertEncoder.from_pretrained(model_name)
         self.p_encoder.load_state_dict(torch.load(p_encoder_path))
-        self.p_encoder.to('cuda')
+        self.p_encoder.to("cuda")
 
         self.q_encoder = BertEncoder.from_pretrained(model_name)
         self.q_encoder.load_state_dict(torch.load(q_encoder_path))
-        self.q_encoder.to('cuda')
+        self.q_encoder.to("cuda")
 
     def get_sparse_embedding(self) -> NoReturn:
 
@@ -427,14 +426,22 @@ class DPR(SparseRetrieval):
             print(type(self.p_embedding))
         else:
             print("Build passage embedding")
-            p_seqs = self.tokenizer(self.contexts, padding="max_length", truncation=True, return_tensors='pt')
-            wiki_dataset = TensorDataset(p_seqs['input_ids'], p_seqs['attention_mask'], p_seqs['token_type_ids'])
+            p_seqs = self.tokenizer(
+                self.contexts,
+                padding="max_length",
+                truncation=True,
+                return_tensors="pt",
+            )
+            wiki_dataset = TensorDataset(
+                p_seqs["input_ids"], p_seqs["attention_mask"], p_seqs["token_type_ids"]
+            )
             wiki_loader = DataLoader(wiki_dataset, batch_size=20)
             for idx, data in enumerate(tqdm(wiki_loader)):
-                p_inputs = {'input_ids': data[0].to('cuda'),
-                            'attention_mask': data[1].to('cuda'),
-                            'token_type_ids': data[2].to('cuda')
-                            }
+                p_inputs = {
+                    "input_ids": data[0].to("cuda"),
+                    "attention_mask": data[1].to("cuda"),
+                    "token_type_ids": data[2].to("cuda"),
+                }
                 with torch.no_grad():
                     p_inputs = {k: v for k, v in p_inputs.items()}
                     output = self.p_encoder(**p_inputs)
@@ -484,7 +491,6 @@ class DPR(SparseRetrieval):
             faiss.write_index(self.indexer, indexer_path)
             print("Faiss Indexer Saved.")
 
-
     def get_relevant_doc(self, query: str, k: Optional[int] = 10) -> Tuple[List, List]:
 
         """
@@ -498,8 +504,10 @@ class DPR(SparseRetrieval):
         """
 
         with timer("transform"):
-            q_input = self.tokenizer(query, padding="max_length", truncation=True, return_tensors='pt')
-            q_input = {i: v.to('cuda') for i, v in q_input.items()}
+            q_input = self.tokenizer(
+                query, padding="max_length", truncation=True, return_tensors="pt"
+            )
+            q_input = {i: v.to("cuda") for i, v in q_input.items()}
             query_vec = self.q_encoder(**q_input)
         assert (
             torch.sum(query_vec) != 0
@@ -529,15 +537,21 @@ class DPR(SparseRetrieval):
             vocab 에 없는 이상한 단어로 query 하는 경우 assertion 발생 (예) 뙣뙇?
         """
 
-        q_seqs = self.tokenizer(queries, padding="max_length", truncation=True, return_tensors='pt')
-        q_dataset = TensorDataset(q_seqs['input_ids'], q_seqs['attention_mask'], q_seqs['token_type_ids'])
+        q_seqs = self.tokenizer(
+            queries, padding="max_length", truncation=True, return_tensors="pt"
+        )
+        q_dataset = TensorDataset(
+            q_seqs["input_ids"], q_seqs["attention_mask"], q_seqs["token_type_ids"]
+        )
         print(len(q_dataset))
-        q_loader = DataLoader(q_dataset,batch_size=4)
-        for idx,q_input in enumerate(tqdm(q_loader)):
-            q_inputs = {'input_ids': q_input[0],
-                        'attention_mask': q_input[1],
-                        'token_type_ids': q_input[2]}
-            q_input = {i:v.to('cuda') for i,v in q_inputs.items()}
+        q_loader = DataLoader(q_dataset, batch_size=4)
+        for idx, q_input in enumerate(tqdm(q_loader)):
+            q_inputs = {
+                "input_ids": q_input[0],
+                "attention_mask": q_input[1],
+                "token_type_ids": q_input[2],
+            }
+            q_input = {i: v.to("cuda") for i, v in q_inputs.items()}
             with torch.no_grad():
                 output = self.q_encoder(**q_input)
                 if idx == 0:
@@ -545,12 +559,11 @@ class DPR(SparseRetrieval):
                 else:
                     query_vec = torch.cat((query_vec, output), 0)
 
-
         assert (
             torch.sum(query_vec) != 0
         ), "오류가 발생했습니다. 이 오류는 보통 query에 vectorizer의 vocab에 없는 단어만 존재하는 경우 발생합니다."
 
-        result = torch.mm(query_vec,self.p_embedding.T)
+        result = torch.mm(query_vec, self.p_embedding.T)
         if not isinstance(result, np.ndarray):
             result = result.cpu().detach().numpy()
         doc_scores = []
@@ -646,8 +659,10 @@ class DPR(SparseRetrieval):
         """
 
         with timer("transform"):
-            q_input = self.tokenizer(query, padding="max_length", truncation=True, return_tensors='pt')
-            q_input = {i: v.to('cuda') for i, v in q_input.items()}
+            q_input = self.tokenizer(
+                query, padding="max_length", truncation=True, return_tensors="pt"
+            )
+            q_input = {i: v.to("cuda") for i, v in q_input.items()}
             query_vec = self.q_encoder(**q_input)
         assert (
             torch.sum(query_vec) != 0
@@ -674,14 +689,20 @@ class DPR(SparseRetrieval):
             vocab 에 없는 이상한 단어로 query 하는 경우 assertion 발생 (예) 뙣뙇?
         """
 
-        q_seqs = self.tokenizer(queries, padding="max_length", truncation=True, return_tensors='pt')
-        q_dataset = TensorDataset(q_seqs['input_ids'], q_seqs['attention_mask'], q_seqs['token_type_ids'])
-        q_loader = DataLoader(q_dataset,batch_size=4)
-        for idx,q_input in enumerate(tqdm(q_loader)):
-            q_inputs = {'input_ids': q_input[0],
-                        'attention_mask': q_input[1],
-                        'token_type_ids': q_input[2]}
-            q_input = {i:v.to('cuda') for i,v in q_inputs.items()}
+        q_seqs = self.tokenizer(
+            queries, padding="max_length", truncation=True, return_tensors="pt"
+        )
+        q_dataset = TensorDataset(
+            q_seqs["input_ids"], q_seqs["attention_mask"], q_seqs["token_type_ids"]
+        )
+        q_loader = DataLoader(q_dataset, batch_size=4)
+        for idx, q_input in enumerate(tqdm(q_loader)):
+            q_inputs = {
+                "input_ids": q_input[0],
+                "attention_mask": q_input[1],
+                "token_type_ids": q_input[2],
+            }
+            q_input = {i: v.to("cuda") for i, v in q_inputs.items()}
             with torch.no_grad():
                 output = self.q_encoder(**q_input)
                 if idx == 0:
@@ -706,20 +727,30 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
-        "--dataset_name", metavar="./data/train_dataset",default="../data/train_dataset", type=str, help=""
-    )
-    parser.add_argument(
-        "--model_name_or_path",
-        metavar='klue/bert-base',
-        default='klue/bert-base',
+        "--dataset_name",
+        metavar="./data/train_dataset",
+        default="../data/train_dataset",
         type=str,
         help="",
     )
-    parser.add_argument("--data_path", metavar="./data",default="../data", type=str, help="")
     parser.add_argument(
-        "--context_path", metavar="wikipedia_documents",default="wikipedia_documents.json", type=str, help=""
+        "--model_name_or_path",
+        metavar="klue/bert-base",
+        default="klue/bert-base",
+        type=str,
+        help="",
     )
-    parser.add_argument("--use_faiss", metavar=False,default=False, type=bool, help="")
+    parser.add_argument(
+        "--data_path", metavar="./data", default="../data", type=str, help=""
+    )
+    parser.add_argument(
+        "--context_path",
+        metavar="wikipedia_documents",
+        default="wikipedia_documents.json",
+        type=str,
+        help="",
+    )
+    parser.add_argument("--use_faiss", metavar=False, default=False, type=bool, help="")
 
     args = parser.parse_args()
 
@@ -745,7 +776,11 @@ if __name__ == "__main__":
         data_path=args.data_path,
         context_path=args.context_path,
     )
-    retriever.models(args.model_name_or_path,'retrieval_models/p_encoder.pt','retrieval_models/p_encoder.pt')
+    retriever.models(
+        args.model_name_or_path,
+        "retrieval_models/p_encoder.pt",
+        "retrieval_models/p_encoder.pt",
+    )
     retriever.get_sparse_embedding()
     # retriever = SparseRetrieval(
     #     tokenize_fn=tokenizer.tokenize,
@@ -762,27 +797,27 @@ if __name__ == "__main__":
             scores, indices = retriever.retrieve_faiss(query)
 
         with timer("bulk query by exhaustive search"):
-            df = retriever.retrieve_faiss(full_ds,100)
+            df = retriever.retrieve_faiss(full_ds, 100)
             correct = 0
             for i in range(len(df["context"])):
                 if df["original_context"][i] in df["context"][i]:
                     correct += 1
             print(
                 "correct retrieval result by exhaustive search",
-                correct/ len(df),
+                correct / len(df),
             )
 
     else:
         with timer("bulk query by exhaustive search"):
 
-            df = retriever.retrieve(full_ds,1)
+            df = retriever.retrieve(full_ds, 1)
             correct = 0
             for i in range(len(df["context"])):
                 if df["original_context"][i] in df["context"][i]:
                     correct += 1
             print(
                 "correct retrieval result by exhaustive search",
-                correct/ len(df),
+                correct / len(df),
             )
 
         with timer("single query by exhaustive search"):

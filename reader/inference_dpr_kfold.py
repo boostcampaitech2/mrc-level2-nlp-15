@@ -104,7 +104,7 @@ def main():
             # "/opt/ml/mrc-level2-nlp-15/test_df50to5_sehyun.csv" # predict
             # "/opt/ml/mrc-level2-nlp-15/test_df50to5_sehyun_no_sep.csv"  # predict
         )
-        #df_len = len(df)
+        # df_len = len(df)
         # for i in range(len(df)):
         #     df["context_id"][i] = eval(df["context_id"][i])
         #     df["answers"][i] = eval(df["answers"][i])
@@ -325,7 +325,7 @@ def run_mrc(
             eval_dataset,
             final,
             max_answer_length=data_args.max_answer_length,
-            output_dir=training_args.output_dir + "final/"
+            output_dir=training_args.output_dir + "final/",
         )
         # predictions.json 은 postprocess_qa_predictions() 호출시 이미 저장됩니다.
         print(

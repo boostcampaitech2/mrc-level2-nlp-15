@@ -20,11 +20,12 @@ from sadice import SelfAdjDiceLoss
 from transformers import Trainer, is_datasets_available, is_torch_tpu_available
 from transformers.trainer_utils import PredictionOutput
 import torch.nn as nn
+
 # from loss import FocalLoss
 if is_datasets_available():
     import datasets
 import torch.nn.functional as F
-from loss import FocalLoss,DiceLoss
+from loss import FocalLoss, DiceLoss
 import torch
 
 # Huggingface의 Trainer를 상속받아 QuestionAnswering을 위한 Trainer를 생성합니다.
@@ -112,7 +113,7 @@ class QuestionAnsweringTrainer(Trainer):
         )
         return predictions
 
-    def compute_loss(self, model, inputs,return_outputs=False):
+    def compute_loss(self, model, inputs, return_outputs=False):
 
         start_positions = inputs.get("start_positions")
         end_positions = inputs.get("end_positions")
@@ -122,15 +123,15 @@ class QuestionAnsweringTrainer(Trainer):
             end_positions = end_positions.squeeze(-1)
 
         outputs = model(**inputs)
-        start_logits = outputs['start_logits']
-        end_logits = outputs['end_logits']
+        start_logits = outputs["start_logits"]
+        end_logits = outputs["end_logits"]
 
         # train의 prepare_train_features함수에서 index안에 정답이 없으면 cls토큰을 정답위치로 해주기 떄문에
         # 주석부분은 사용하지 않습니다!
         # ignored_index = start_logits.size(1)
         # start_positions = start_positions.clamp(0, ignored_index)
         # end_positions = end_positions.clamp(0, ignored_index)
-        loss_fct = FocalLoss() # 원하는 loss를 사용하면 됩니다
+        loss_fct = FocalLoss()  # 원하는 loss를 사용하면 됩니다
         start_loss = loss_fct(start_logits, start_positions)
         end_loss = loss_fct(end_logits, end_positions)
         total_loss = (start_loss + end_loss) / 2

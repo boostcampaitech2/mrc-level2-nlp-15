@@ -1,26 +1,39 @@
-from transformers import AutoModel,modeling_outputs,RobertaPreTrainedModel, BertPreTrainedModel,BertModel, RobertaModel,PreTrainedModel,DistilBertPreTrainedModel,DistilBertModel,ElectraModel,ElectraPreTrainedModel
+from transformers import (
+    AutoModel,
+    modeling_outputs,
+    RobertaPreTrainedModel,
+    BertPreTrainedModel,
+    BertModel,
+    RobertaModel,
+    PreTrainedModel,
+    DistilBertPreTrainedModel,
+    DistilBertModel,
+    ElectraModel,
+    ElectraPreTrainedModel,
+)
 import torch.nn as nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 import torch
+
+
 class BertEncoder(BertPreTrainedModel):
     def __init__(self, config):
         super(BertEncoder, self).__init__(config)
         # self.model = BertModel.from_pretrained(config)
         self.bert = BertModel(config)
-        self.layer = nn.Linear(768,2048)
+        self.layer = nn.Linear(768, 2048)
         self.tanh = nn.Tanh()
         self.init_weights()
 
-    def forward(self, input_ids,
-                attention_mask=None, token_type_ids=None):
-        outputs = self.bert(input_ids=input_ids,
-                            attention_mask=attention_mask,
-                            )
+    def forward(self, input_ids, attention_mask=None, token_type_ids=None):
+        outputs = self.bert(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+        )
         pooled_output = outputs[0]
         # pooled_output = self.layer(pooled_output)
-        result = torch.sum(pooled_output,1)/ 768
+        result = torch.sum(pooled_output, 1) / 768
         return result
-
 
 
 class RobertaWithLstmForQuestionAnswering(RobertaPreTrainedModel):
@@ -33,14 +46,14 @@ class RobertaWithLstmForQuestionAnswering(RobertaPreTrainedModel):
 
         self.roberta = RobertaModel(config, add_pooling_layer=False)
         self.qa_outputs = nn.Linear(config.hidden_size, config.num_labels)
-        self.lstm= nn.LSTM(
-            input_size= config.hidden_size,
-            hidden_size= config.hidden_size//2,
-            num_layers= 1,
-            dropout= 0.1,
-            batch_first= True,
-            bidirectional= True
-            )
+        self.lstm = nn.LSTM(
+            input_size=config.hidden_size,
+            hidden_size=config.hidden_size // 2,
+            num_layers=1,
+            dropout=0.1,
+            batch_first=True,
+            bidirectional=True,
+        )
         self.init_weights()
 
     def forward(
@@ -67,7 +80,9 @@ class RobertaWithLstmForQuestionAnswering(RobertaPreTrainedModel):
             Positions are clamped to the length of the sequence (:obj:`sequence_length`). Position outside of the
             sequence are not taken into account for computing the loss.
         """
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = (
+            return_dict if return_dict is not None else self.config.use_return_dict
+        )
 
         outputs = self.roberta(
             input_ids,

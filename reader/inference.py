@@ -430,7 +430,8 @@ def run_mrc(
         trainer.log_metrics("test", metrics)
         trainer.save_metrics("test", metrics)
 
-# added by 세현. test_df50to5.csv 파일 읽기용  
+
+# added by 세현. test_df50to5.csv 파일 읽기용
 def run_from_csv(csv_path):
     df = pd.read_csv(csv_path)
     f = Features(
@@ -442,6 +443,7 @@ def run_from_csv(csv_path):
     )
     datasets = DatasetDict({"validation": Dataset.from_pandas(df, features=f)})
     return datasets
+
 
 if __name__ == "__main__":
     main()
