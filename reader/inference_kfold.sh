@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python inference.py --output_dir ./models/lstm_512 \
+python inference_.py --output_dir ./models/lstm_512 \
 --output_dir ./outputs/test_dataset/ \
 --dataset_name ../data/test_dataset/ \
 --model_name_or_path ./models/lstm_512/ \
