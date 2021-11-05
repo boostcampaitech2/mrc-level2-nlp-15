@@ -10,10 +10,10 @@
   - inference_dpr.py
 - Retrieval
   - README
-  - cross_encoder In-batch Negative
-  - cross_encoder with Elastic Negative
   - Bi-Encoder In-batch Negative
   - Bi-Encoder with Efficient Negative
+  - cross_encoder In-batch Negative
+  - cross_encoder with Elastic Negative
   - elastic_search.py
   - colbert.py
 - utils
