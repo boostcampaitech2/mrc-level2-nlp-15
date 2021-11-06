@@ -36,7 +36,7 @@ from arguments import (
 )
 
 # from process import preprocess_train_val
-# from elastic_search import ela/stic
+from retrieval.elastic_search import elastic
 
 logger = logging.getLogger(__name__)
 
@@ -227,18 +227,20 @@ def run_mrc(
     if training_args.do_train:
         if "train" not in datasets:
             raise ValueError("--do_train requires a train dataset")
-
-        train_dataset = concatenate_datasets(
-            [
-                datasets["train"].flatten_indices(),
-                datasets["validation"].flatten_indices(),
-            ]
-        )  # train dev 를 합친 4192 개 질문에 대해 모두 테스트
-
-        # es = elastic(INDEX_NAME='wikipedia')
-        # es.build_elatic()
-        # train_dataset = es.retrieve_for_train(train_dataset,topk=2)
-        # train_dataset = Dataset.from_pandas(train_dataset)
+        if training_args.combine_train:
+            train_dataset = concatenate_datasets(
+                [
+                    datasets["train"].flatten_indices(),
+                    datasets["validation"].flatten_indices(),
+                ]
+            )  # train dev 를 합친 4192 개 질문에 대해 모두 테스트
+        elif training_args.train_only:
+            train_dataset = datasets["train"]
+        elif training_args.train_with_negative_batch:
+            es = elastic(INDEX_NAME="wikipedia")
+            es.build_elatic()
+            train_dataset = es.retrieve_for_train(train_dataset, topk=2)
+            train_dataset = Dataset.from_pandas(train_dataset)
         train_dataset = train_dataset.map(
             prepare_train_features,
             batched=True,
