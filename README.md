@@ -23,7 +23,42 @@
 - utils
   - loss.py
   - utils_qa.py
-
+  
+```
+  │  .gitignore
+  │  config.yaml
+  │  inference.py
+  │  inference_dpr.py
+  │  install_requirements.sh
+  │  README.md
+  │  
+  ├─reader
+  │      inference_dpr_kfold.sh
+  │      models.py
+  │      README.md
+  │      train.py
+  │      trainer_qa.py
+  │      train_kfold.py
+  │      train_kfold.sh
+  │
+  ├─retrieval
+  │      ColBert.py
+  │      cross_encoder.py
+  │      dense_train.py
+  │      DPR.py
+  │      elastic_filter_POS.py
+  │      elastic_make_negatives.py
+  │      elastic_search.py
+  │      gold.py
+  │      README.md
+  │      retrieval.py
+  │
+  └─utils
+          loss.py
+          utils_qa.py
+          __init__.py
+          
+```
 
 
 ## Implementation
