@@ -679,6 +679,7 @@ class ColBertRetrieval:
         
         criterion = nn.CrossEntropyLoss()
 
+        best_acc = 0
         for epoch, _ in enumerate(train_iterator):
             losses = 0
             for step, batch in enumerate(train_dataloader):
@@ -719,6 +720,11 @@ class ColBertRetrieval:
                 
                 #torch.cuda.empty_cache()
                 del p_inputs, q_inputs
+                
+            acc = self.evaluate(args=args, colbert_encoder=self.colbert_encoder)
+            if acc > best_acc:
+                torch.save(self.colbert_encoder, "./colbert_encoder.pt")
+                best_acc = acc
 
         return self.colbert_encoder
 
