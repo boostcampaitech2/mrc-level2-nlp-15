@@ -1,4 +1,8 @@
-# MRC Competition Code
+# Open-Domain Question Answering Competition
+
+
+
+## Code
 
 - Reader
   - README
@@ -19,3 +23,14 @@
 - utils
   - loss.py
   - utils_qa.py
+
+
+
+## Implementation
+
+- Install Requirements
+
+  ```py
+  bash install_requirements.sh
+  ```
+
