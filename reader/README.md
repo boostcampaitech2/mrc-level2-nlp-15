@@ -9,7 +9,7 @@
 - num_fold : KFold 사용한 inference 진행시 몇 Fold로 진행했는지 넣어줄 인자 (default 는 1로써 KFold가 진행하지 않았을 경우임)
 
 저희가 사용한 
-''' bash
+``` bash
 python inference_.py --output_dir ./models/lstm_512 \
 --output_dir ./outputs/test_dataset/ \
 --dataset_name ../data/test_dataset/ \
@@ -18,4 +18,4 @@ python inference_.py --output_dir ./models/lstm_512 \
 --metric_for_best_model exact_match \
 --per_device_eval_batch_size 512 \
 --num_fold 10
-'''
+```
