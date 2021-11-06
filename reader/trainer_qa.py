@@ -15,18 +15,13 @@
 """
 Question-Answering task와 관련된 'Trainer'의 subclass 코드 입니다.
 """
-from sadice import SelfAdjDiceLoss
 
 from transformers import Trainer, is_datasets_available, is_torch_tpu_available
-from transformers.trainer_utils import PredictionOutput
-import torch.nn as nn
 
 # from loss import FocalLoss
 if is_datasets_available():
     import datasets
-import torch.nn.functional as F
 from utils.loss import FocalLoss
-import torch
 
 # Huggingface의 Trainer를 상속받아 QuestionAnswering을 위한 Trainer를 생성합니다.
 class QuestionAnsweringTrainer(Trainer):
