@@ -25,7 +25,7 @@ import torch.nn as nn
 if is_datasets_available():
     import datasets
 import torch.nn.functional as F
-from loss import FocalLoss, DiceLoss
+from utils.loss import FocalLoss
 import torch
 
 # Huggingface의 Trainer를 상속받아 QuestionAnswering을 위한 Trainer를 생성합니다.
@@ -111,7 +111,7 @@ class QuestionAnsweringTrainer(Trainer):
         predictions = self.post_process_function(
             test_examples, test_dataset, output.predictions, self.args
         )
-        #Kfold를 위해 ouput도 return 해줍니다.
+        # Kfold를 위해 ouput도 return 해줍니다.
         return predictions, output
 
     def compute_loss(self, model, inputs, return_outputs=False):
