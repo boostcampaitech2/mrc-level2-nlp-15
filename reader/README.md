@@ -8,7 +8,7 @@
 - per_device_eval_batch_size : inference에 넣을 dataset의 batch_size
 - num_fold : KFold 사용한 inference 진행시 몇 Fold로 진행했는지 넣어줄 인자 (default 는 1로써 KFold가 진행하지 않았을 경우임)
 
-저희가 사용한 
+저희가 사용한 inference shell script
 ``` bash
 python inference_.py --output_dir ./models/lstm_512 \
 --output_dir ./outputs/test_dataset/ \
