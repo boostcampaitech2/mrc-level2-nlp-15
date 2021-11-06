@@ -1,18 +1,16 @@
-from elasticsearch import Elasticsearch, helpers
-import pandas as pd
-from tqdm import tqdm
+# import python modules
+import re
 import time
 import json
 from typing import List, Tuple, NoReturn, Any, Optional, Union
 import random
-import re
 
+# import data wrangling modules
+import pandas as pd
+from tqdm import tqdm
 
-def preprocess(text):
-    text = re.sub(r"\\r|\\n|\n|\\t", " ", text)
-    text = re.sub(r"\\", " ", text)
-    text = re.sub(r"\s+", " ", text)
-    return text
+# import third party modules
+from elasticsearch import Elasticsearch, helpers
 
 
 class elastic:
@@ -59,17 +57,18 @@ class elastic:
         }
 
     def build_elatic(self):
+        """bulk building elastic search"""
         with open(self.context_path) as file:
             json_data = json.load(file)
         docs = []
-        for i, j in json_data.items():
+        for i, item in json_data.items():
             docs.append(
                 {
                     "_index": "wikipedia",
                     "_source": {
-                        "text": preprocess(j["text"]),
-                        "title": j["title"],
-                        "document_id": j["document_id"],
+                        "text": item["text"],
+                        "title": item["title"],
+                        "document_id": item["document_id"],
                     },
                 }
             )
@@ -102,6 +101,7 @@ class elastic:
                 context.append(docu["_source"]["text"])
                 score.append(docu["_score"])
                 document_id.append(docu["_source"]["document_id"])
+
             # score = list(map(lambda x: str(x/sum(score)),score))
             cp["context"] = "///".join(context)  # 리스트를 사용하려면 join없이 그냥 context를 쓰면 됩니다.
             cp["score"] = score
