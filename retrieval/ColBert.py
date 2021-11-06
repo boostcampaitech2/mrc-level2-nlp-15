@@ -232,7 +232,6 @@ def _split_into_batches(ids, mask, bsize):
     return batches
 
 
-
 def print_message(*s, condition=True):
     s = ' '.join([str(x) for x in s])
     msg = "[{}] {}".format(datetime.datetime.now().strftime("%b %d, %H:%M:%S"), s)
@@ -319,12 +318,6 @@ def create_directory(path):
         print('\n')
         print_message("#> Creating directory", path, '\n\n')
         os.makedirs(path)
-
-# def batch(file, bsize):
-#     while True:
-#         L = [ujson.loads(file.readline()) for _ in range(bsize)]
-#         yield L
-#     return
 
 
 def f7(seq):
@@ -559,7 +552,6 @@ class ColBertRetrieval:
     def __init__(self,
         args,
         dataset,
-        # tokenizer,
         q_tokenizer,
         d_tokenizer,
         colbert_encoder,
@@ -573,14 +565,82 @@ class ColBertRetrieval:
         self.args = args
         self.dataset = dataset
 
-        self.tokenizer = tokenizer
         self.q_tokenizer = q_tokenizer
         self.d_tokenizer = d_tokenizer
         self.colbert_encoder = colbert_encoder
 
         self.df = df
-        # self.p_encoder=None
-        # self.q_encoder=None
+        self.colbert_p_embedding=None
+
+    def get_p_embs(self, corpus=None, colbert_encoder=None):
+
+        # save pickle
+        pickle_name = f"colbert_p_embedding.bin"
+        emd_path = os.path.join(self.data_path, pickle_name)
+
+        if os.path.isfile(emd_path) and os.path.isfile(emd_path):
+            with open(emd_path, "rb") as file:
+                self.colbert_p_embedding = pickle.load(file)
+        else:
+            if colbert_encoder is None:
+                colbert_encoder = self.colbert_encoder
+            if corpus is None:
+                with open('/opt/ml/data/wikipedia_documents.json', "r", encoding="utf-8") as f:
+                    wiki = json.load(f)
+
+                corpus = list(
+                    dict.fromkeys([v["text"] for v in wiki.values()])
+                )
+
+            with torch.no_grad() :
+                colbert_encoder.eval()
+
+                p_embs = []
+                for p in tqdm(corpus) :
+                    # p = tokenizer(p, padding='max_length', truncation=True, return_tensors='pt').to('cuda')
+                    # p_emb = p_encoder(**p).to('cpu').numpy()
+                    p_emb = colbert_encoder.doc(self.d_tokenizer.tensorize([p])[0].to('cuda'), self.d_tokenizer.tensorize([p])[1].to('cuda'))
+                    p_emb = p_emb.to('cpu').numpy()
+                    p_embs.append(p_emb)
+            p_embs = torch.Tensor(p_embs).squeeze()  
+
+            self.colbert_p_embedding = p_embs
+            with open(emd_path, "wb") as file:
+                pickle.dump(self.colbert_p_embedding, file)            
+
+        return self.colbert_p_embedding        
+
+
+    def get_relavant_doc(self, queries, colbert_encoder, k=1):
+        self.get_p_embs(self, colbert_encoder=colbert_encoder)
+
+        with torch.no_grad() :
+            colbert_encoder.eval()
+            # query (input_id, attention_mask) -> Q emb
+            # q_emb = colbert_encoder.query(q_tokenizer.tensorize(queries))
+            # q_emb = colbert_encoder.query(q_tokenizer.tensorize(queries)[0].to('cuda'), q_tokenizer.tensorize(queries)[1].to('cuda'))
+            # q_emb = q_emb.to('cpu')
+
+            ############################# 추가 ###############################
+            q_embs = []
+            for q in tqdm(queries) :
+                # p = tokenizer(p, padding='max_length', truncation=True, return_tensors='pt').to('cuda')
+                # p_emb = p_encoder(**p).to('cpu').numpy()
+                q_emb = colbert_encoder.doc(self.q_tokenizer.tensorize([q])[0].to('cuda'), self.q_tokenizer.tensorize([q])[1].to('cuda'))
+                q_emb = q_emb.to('cpu')
+                q_embs.append(q_emb)
+
+
+        result_scores = []
+        result_indices = []
+        for i, qq in enumerate(tqdm(q_embs)) :
+            dot_prod_scores = colbert_encoder.score(qq, self.colbert_p_embedding)
+            score, indice = torch.sort(torch.tensor(dot_prod_scores), descending = True)
+            result_scores.append(score)
+            result_indices.append(indice)
+        
+        return result_scores, result_indices
+
 
     def train(self, args=None, tokenizer = None, df=None):
         if args is None:
@@ -588,14 +648,6 @@ class ColBertRetrieval:
         if tokenizer is None :
             tokenizer = self.tokenizer
 
-        # q_seqs = tokenizer(self.dataset['question'], padding="max_length", truncation=True, return_tensors='pt')
-        # p_seqs = tokenizer(self.dataset['context'], padding="max_length", truncation=True, return_tensors='pt') 
-
-        # train_dataset = TensorDataset(p_seqs['input_ids'], p_seqs['attention_mask'], p_seqs['token_type_ids'], 
-        #                 q_seqs['input_ids'], q_seqs['attention_mask'], q_seqs['token_type_ids'])
-        # train_dataloader = DataLoader(train_dataset, batch_size=args.per_device_train_batch_size)
-
-        # tensorize_triples(query_tokenizer, doc_tokenizer, queries, positives, negatives, bsize):
         train_dataloader = tensorize_triples(
             self.q_tokenizer
             , self.d_tokenizer
@@ -620,25 +672,16 @@ class ColBertRetrieval:
         
         global_step = 0
 
-        # self.p_encoder.zero_grad()
-        # self.q_encoder.zero_grad()
         self.colbert_encoder.zero_grad()
-        # torch.cuda.empty_cache()
 
         train_iterator = trange(int(args.num_train_epochs), desc="Epoch")
-        # self.q_encoder.train()
-        # self.p_encoder.train()
         self.colbert_encoder.train()
         
         criterion = nn.CrossEntropyLoss()
 
         for epoch, _ in enumerate(train_iterator):
-            # epoch_iterator = tqdm(train_dataloader, desc="Iteration")
-            # loss_value=0 # Accumulation할 때 진행
             losses = 0
             for step, batch in enumerate(train_dataloader):
-                # if torch.cuda.is_available():
-                #     batch = tuple(t.to_device('cuda') for t in batch)
 
                 # D
                 p_inputs = {'input_ids': batch[0][0].cuda(),
@@ -653,20 +696,11 @@ class ColBertRetrieval:
                 sim_scores = self.colbert_encoder(Q=q_inputs, D=p_inputs)
 
                 # Calculate similarity score & loss
-                # sim_scores = self.colbert_encoder.score(q_outputs, p_outputs)
-
-                # target: position of positive samples = diagonal element 
                 targets = torch.zeros(args.per_device_train_batch_size).long()
                 
                 if torch.cuda.is_available():
                     targets = targets.to('cuda')
 
-                # sim_scores = F.log_softmax(sim_scores, dim=1)
-                # loss = -F.log_softmax(sim_scores)[:,0].mean()
-                # print(f'sim_scores {sim_scores} | targets {targets}')
-                # print(f'sim_scores.shape, targets.shape {sim_scores.shape} | {targets.shape}')
-                
-                # sim_scores shaped as batch_size x 2
                 sim_scores = sim_scores.view(-1, 2)
                 
                 # get mean of the loss
@@ -675,18 +709,6 @@ class ColBertRetrieval:
                 if step % 100 == 0 :
                     print(f'{epoch}epoch loss: {losses/(step+1)}') # Accumulation할 경우 주석처리
 
-                
-                #################ACCUMULATION###############################
-                # loss_value += loss
-                # if (step+1) % args.gradient_accumulation_steps == 0 :
-                #     optimizer.step()
-                #     scheduler.step()
-                #     self.q_encoder.zero_grad()
-                #     self.p_encoder.zero_grad()
-                #     global_step += 1
-                #     print(loss_value/args.gradient_accumulation_steps)
-                #     loss_value = 0
-                ############################################################
                 self.colbert_encoder.zero_grad()
                 # self.p_encoder.zero_grad()
                 loss.backward()
@@ -701,9 +723,48 @@ class ColBertRetrieval:
         return self.colbert_encoder
 
 
-def evaluate(p_encoder, q_encoder, data_path, tokenizer):
+    def evaluate(self, args=None, colbert_encoder=None, corpus=None, topk=5):
+        
+        if colbert_encoder is None:
+            colbert_encoder = self.colbert_encoder
+        if corpus is None:
+            with open('/opt/ml/data/wikipedia_documents.json', "r", encoding="utf-8") as f:
+                wiki = json.load(f)
 
-    return 
+            corpus = list(
+                dict.fromkeys([v["text"] for v in wiki.values()])
+            )            
+        doc_scores, doc_indices = self.get_relavant_doc(args.dataset['validation']['question'], colbert_encoder)
+
+        total = []
+        for idx, example in enumerate(
+                tqdm(args.dataset['validation'], desc="Dense retrieval: ")
+            ):
+                tmp = {
+                    # Query와 해당 id를 반환합니다.
+                    "question": example["question"],
+                    "id": example["id"],
+                    # Retrieve한 Passage의 id, context를 반환합니다.
+                    "context_id": doc_indices[idx][:topk],
+                    "context": " ".join(  # 기존에는 ' '.join()
+                        [corpus[pid] for pid in doc_indices[idx][:topk]]
+                    ),
+                    "scores" : doc_scores[idx][:topk]
+                }
+                if "context" in example.keys() and "answers" in example.keys():
+                    # validation 데이터를 사용하면 ground_truth context와 answer도 반환합니다.
+                    tmp["original_context"] = example["context"]
+                    tmp["answers"] = example["answers"]
+                total.append(tmp)
+
+        cqas = pd.DataFrame(total)
+        
+        correct_cnt = 0
+        for i in range(len(cqas)) :
+            if cqas['original_context'][i] in cqas['context'][i] :
+                correct_cnt+=1       
+
+        return correct_cnt / len(self.dataset['validation'])
 
 
 
