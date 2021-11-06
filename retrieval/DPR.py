@@ -1,28 +1,41 @@
-from datasets import load_from_disk
-from transformers import AutoTokenizer
+# import python modules
+import json
+
+# import data wrangling modules
 import numpy as np
+import pandas as pd
 from tqdm import tqdm, trange
 import random
+
+# import torch modules
 import torch
 import torch.nn.functional as F
+from torch.utils.data import Dataset, SequentialSampler
+
+# import transformers and its related modules
 from transformers import (
+    AutoTokenizer,
     BertModel,
     BertPreTrainedModel,
     AdamW,
     TrainingArguments,
     get_linear_schedule_with_warmup,
 )
-from torch.utils.data import SequentialSampler
-import json
-from torch.utils.data import Dataset
-from utils_qa import CustomSampler
+from datasets import load_from_disk
+
+# import third party modules
+from collections import defaultdict
+
+# import custom modules
+from utils.utils_qa import CustomSampler
+from elasticsearch import Elasticsearch, helpers
 
 
 def seed():
-    torch.manual_seed(3532812018032770127)
-    torch.cuda.manual_seed(3532812018032770127)
-    np.random.seed(324)
-    random.seed(2021)
+    torch.manual_seed(42)
+    torch.cuda.manual_seed(42)
+    np.random.seed(42)
+    random.seed(42)
 
 
 class CustomDataset(Dataset):
