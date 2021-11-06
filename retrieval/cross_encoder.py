@@ -36,7 +36,12 @@ def set_seed(random_seed):
 
 class BertEncoder(BertPreTrainedModel):
     """
-    Encoder using BertModel as a backbone model
+    Encoder for crossencoder using BertModel as a backbone model
+
+    In the case of crossencoders,
+     questions and phrases are combined,
+     and the scalar value obtained by passing the final cls token through the linear layer
+     is used as a score for the similarity of the q-p pair.
     """
 
     def __init__(self, config):
@@ -68,7 +73,12 @@ class BertEncoder(BertPreTrainedModel):
 
 class RoBertaEncoder(RobertaPreTrainedModel):
     """
-    Encoder using RoberatModel as a backbone model
+    Encoder for crossencoder using RoBertaModel as a backbone model
+
+    In the case of crossencoders,
+     questions and phrases are combined,
+     and the scalar value obtained by passing the final cls token through the linear layer
+     is used as a score for the similarity of the q-p pair.
     """
 
     def __init__(self, config):
