@@ -18,8 +18,8 @@ from elasticsearch import Elasticsearch, helpers
 
 
 class elastic:
-    def __init__(self, INDEX_NAME, context_path="../data/wikipedia_documents.json"):
-        self.index_name = INDEX_NAME
+    def __init__(self,index_name:str,context_path:str="../data/wikipedia_documents.json") -> None:
+        self.index_name = index_name
         try:
             self.es.transport.close()
         except:
@@ -60,8 +60,8 @@ class elastic:
             },
         }
 
-    def build_elatic(self):
-        """bulk building elastic search"""
+    def build_elatic(self) -> None:
+        """elastic search index가 있는지 확인하고 없으면 만드는 부분입니다."""
         with open(self.context_path) as file:
             json_data = json.load(file)
         docs = []
@@ -83,7 +83,25 @@ class elastic:
             self.es.indices.create(index=self.index_name, body=self.index_setting)
             helpers.bulk(self.es, docs)
 
-    def retrieve(self, query_or_dataset, topk):
+    def retrieve(self,dataset:Dataset,topk:int)->pd.DataFrame:
+        """
+        Arguments:
+            query_or_dataset (Union[str, Dataset]):
+                str이나 Dataset으로 이루어진 Query를 받습니다.
+                str 형태인 하나의 query만 받으면 `get_relevant_doc`을 통해 유사도를 구합니다.
+                Dataset 형태는 query를 포함한 HF.Dataset을 받습니다.
+                이 경우 `get_relevant_doc_bulk`를 통해 유사도를 구합니다.
+            topk (Optional[int], optional):
+                상위 몇 개의 passage를 사용할 것인지 지정합니다.
+
+        Returns:
+            Query를 받는 경우 -> pd.DataFrame: [description]
+
+        Note:
+            다수의 Query를 받는 경우,
+                Ground Truth가 있는 Query (train/valid) -> 기존 Ground Truth Passage를 같이 반환합니다.
+                Ground Truth가 없는 Query (test) -> Retrieval한 Passage만 반환합니다.
+        """
         datas = []
         for i in tqdm(range(len(query_or_dataset))):
             cp = {i: v for i, v in query_or_dataset[i].items()}
@@ -106,8 +124,7 @@ class elastic:
                 score.append(docu["_score"])
                 document_id.append(docu["_source"]["document_id"])
 
-            # score = list(map(lambda x: str(x/sum(score)),score))
-            cp["context"] = "///".join(context)  # 리스트를 사용하려면 join없이 그냥 context를 쓰면 됩니다.
+            cp["context"] = "///".join(context)  
             cp["score"] = score
             cp["document_id"] = document_id
             datas.append(cp)
@@ -127,7 +144,20 @@ class elastic:
         join_context = "<다음 문맥>".join(context)
         return join_context
 
-    def get_doc_scores(self, query, k):
+    def get_relevant_doc(self, query: str, topk: Optional[int] = 1) -> str:
+        """
+        Arguments:
+            query str:
+                질문에 해당하는 str을 받습니다.
+            topk (Optional[int], optional):
+                상위 몇 개의 passage를 사용할 것인지 지정합니다.
+
+        Returns:
+            topk개의 문서가 연결된 str을 반환합니다.
+
+        Note:
+            하나의 문장에 대한 입력만 받을 수 있습니다.
+        """
         docs = self.es.retrieve(query=query, k=k)
         contexts = [doc["context"] for doc in docs]
         queries = [query for _ in range(len(docs))]
