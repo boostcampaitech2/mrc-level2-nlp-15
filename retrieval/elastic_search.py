@@ -9,6 +9,10 @@ import random
 import pandas as pd
 from tqdm import tqdm
 
+# import torch and its related modules
+import torch
+import torch.nn.functional as F
+
 # import third party modules
 from elasticsearch import Elasticsearch, helpers
 
@@ -122,6 +126,36 @@ class elastic:
             context.append(docu["_source"]["text"])
         join_context = "<다음 문맥>".join(context)
         return join_context
+
+    def get_doc_scores(self, query, k):
+        docs = self.es.retrieve(query=query, k=k)
+        contexts = [doc["context"] for doc in docs]
+        queries = [query for _ in range(len(docs))]
+
+        tokenized_dataset, sample_id2idx = self.prepare_train_features(
+            queries, contexts
+        )
+
+        doc_id2prob = dict()
+
+        for sample_id, idx_list in sample_id2idx.items():
+            probs = []
+            for idx in idx_list:
+                inputs = {
+                    key: torch.tensor(val[idx]).unsqueeze(dim=0).cuda()
+                    for key, val in tokenized_dataset.items()
+                }
+                outputs = self.model(**inputs)
+                prob = F.softmax(outputs.logits.to("cpu"), dim=1).squeeze()[
+                    1
+                ]  # [[0.2,0.8]]->[0.2,0.8]->0.8
+                probs.append(float(prob))  # tensor -> float
+            doc_id = docs[sample_id]["document_id"]
+            doc_id2prob[doc_id] = {
+                "dpr_prob": sum(probs) / len(probs),
+                "es_score": docs[sample_id]["score"],
+            }
+        return doc_id2prob
 
 
 if __name__ == "__main__":

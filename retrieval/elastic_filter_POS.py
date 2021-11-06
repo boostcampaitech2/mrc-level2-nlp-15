@@ -14,14 +14,13 @@ class elastic:
         self.context_path = context_path
         config = {
             u"host": u"localhost",
-            u"port": b'9200',
+            u"port": b"9200",
             "timeout": 100,
             "max_retries": 10,
             "retry_on_timeout": True,
         }
         self.es = Elasticsearch([config])
 
-        
         #### POS list: https://lucene.apache.org/core/8_9_0/analyzers-nori/org/apache/lucene/analysis/ko/POS.Tag.html
         ### Paper: http://hiai.co.kr/wp-content/uploads/2020/10/%E1%84%8B%E1%85%B5%E1%84%90%E1%85%A2%E1%84%86%E1%85%B5%E1%86%AB_%E1%84%80%E1%85%B5%E1%84%80%E1%85%A8-%E1%84%83%E1%85%A9%E1%86%A8%E1%84%92%E1%85%A2%E1%84%85%E1%85%B3%E1%86%AF-%E1%84%8B%E1%85%B5%E1%84%8B%E1%85%AD%E1%86%BC%E1%84%92%E1%85%A1%E1%86%AB-COVID-19-%E1%84%82%E1%85%B2%E1%84%89%E1%85%B3-%E1%84%83%E1%85%A9%E1%84%86%E1%85%A6%E1%84%8B%E1%85%B5%E1%86%AB%E1%84%8B%E1%85%B4-%E1%84%92%E1%85%A1%E1%86%AB%E1%84%80%E1%85%AE%E1%86%A8%E1%84%8B%E1%85%A5-%E1%84%8C%E1%85%B5%E1%86%AF%E1%84%8B%E1%85%B4%E1%84%8B%E1%85%B3%E1%86%BC%E1%84%83%E1%85%A1%E1%86%B8-%E1%84%8E%E1%85%A2%E1%86%BA%E1%84%87%E1%85%A9%E1%86%BA.pdf
         self.index_setting = {
@@ -38,42 +37,42 @@ class elastic:
                         "filter": {
                             "my_nori_filter": {
                                 "type": "nori_part_of_speech",
-                                "stoptags":["NR", # numeral (하나 밖에 )
-                                            "NA", # Unknown
-                                            "SC", # Separator
-                                            "SE", # Ellipsis (줄임표)
-                                            "SF", # Terminal punctuation (물음표, 느낌표)
-                                            "SP", # Space (공백)
-                                            "UNA",# Unknown
-                                            "UNKNOWN", # Unknwon
-                                            "E", # Verbal Endings (사랑/하(E)/다
-                                            "J", # Ending Particle/조사: (나/는(J)
-                                            "IC", #Interjection 감탄사, (와우, 맙소사)
-                                            "MAJ", #접속 부사  (그런데, 그러나)
-                                            "SH", # Chinese Character
-                                            "VA", # Adjective 형용사
-                                            "VX", # 보조 용언 (가지/고/싶(VX)/다)
-                                            "VV", # Verb
-                                            "SY", # Other symbol
-                                            "MAG", #General Adverb (빨리, 과연),
-                                            "MAJ", # Conjunctive Adverb,
-                                            "SL", # Foreign Language
-                                            "SSO",
-                                            "SSC",
-                                            "VCN",
-                                            "VCP",
-                                            "VSV",  # Negative designator
-                                            "XPN", # Positive designator
-                                            "XSN", # Noun suffix
-                                            "XSV", #Verb suffix
-                                            "MM",
-                                            "SL",
-                                            "SN",
-                                            "XR",
-
-                                            ]
+                                "stoptags": [
+                                    "NR",  # numeral (하나 밖에 )
+                                    "NA",  # Unknown
+                                    "SC",  # Separator
+                                    "SE",  # Ellipsis (줄임표)
+                                    "SF",  # Terminal punctuation (물음표, 느낌표)
+                                    "SP",  # Space (공백)
+                                    "UNA",  # Unknown
+                                    "UNKNOWN",  # Unknwon
+                                    "E",  # Verbal Endings (사랑/하(E)/다
+                                    "J",  # Ending Particle/조사: (나/는(J)
+                                    "IC",  # Interjection 감탄사, (와우, 맙소사)
+                                    "MAJ",  # 접속 부사  (그런데, 그러나)
+                                    "SH",  # Chinese Character
+                                    "VA",  # Adjective 형용사
+                                    "VX",  # 보조 용언 (가지/고/싶(VX)/다)
+                                    "VV",  # Verb
+                                    "SY",  # Other symbol
+                                    "MAG",  # General Adverb (빨리, 과연),
+                                    "MAJ",  # Conjunctive Adverb,
+                                    "SL",  # Foreign Language
+                                    "SSO",
+                                    "SSC",
+                                    "VCN",
+                                    "VCP",
+                                    "VSV",  # Negative designator
+                                    "XPN",  # Positive designator
+                                    "XSN",  # Noun suffix
+                                    "XSV",  # Verb suffix
+                                    "MM",
+                                    "SL",
+                                    "SN",
+                                    "XR",
+                                ],
                             }
-                        }
+                        },
                     }
                 }
             },
@@ -116,15 +115,15 @@ class elastic:
         for i in tqdm(range(len(query_or_dataset))):
             cp = {i: v for i, v in query_or_dataset[i].items()}
             if (
-                    "context" in query_or_dataset[i].keys()
-                    and "answers" in query_or_dataset[i].keys()
+                "context" in query_or_dataset[i].keys()
+                and "answers" in query_or_dataset[i].keys()
             ):
                 cp["original_context"] = query_or_dataset[i]["context"]
 
             query = query_or_dataset[i]["question"]
             query = query.replace("/", "")
             query = query.replace("~", " ")
-            #res = es.search(index= INDEX_NAME, analyzer = "korean", q = query)
+            # res = es.search(index= INDEX_NAME, analyzer = "korean", q = query)
             res = self.es.search(index=self.index_name, q=query, size=topk + 1)
             x = res["hits"]["hits"]
             context = []
@@ -140,8 +139,8 @@ class elastic:
         for i in tqdm(range(len(query_or_dataset))):
             cp = {i: v for i, v in query_or_dataset[i].items()}
             if (
-                    "context" in query_or_dataset[i].keys()
-                    and "answers" in query_or_dataset[i].keys()
+                "context" in query_or_dataset[i].keys()
+                and "answers" in query_or_dataset[i].keys()
             ):
                 cp["original_context"] = query_or_dataset[i]["context"]
 
@@ -154,7 +153,8 @@ class elastic:
             for docu in x:
                 cont = docu["_source"]["text"]
                 # groud truth 제거
-                if cont == cp["original_context"]: continue
+                if cont == cp["original_context"]:
+                    continue
                 context.append(docu["_source"]["text"])
             context = context[:topk]
             cp["context"] = "///".join(context)
