@@ -10,7 +10,8 @@ import random
 # import torch modules
 import torch
 import torch.nn.functional as F
-from torch.utils.data import Dataset, SequentialSampler
+from torch.utils.data import Dataset, SequentialSampler, TensorDataset
+
 
 # import transformers and its related modules
 from transformers import (
@@ -160,9 +161,6 @@ class CustomDataset_Overflow(Dataset):
             q_seqs["token_type_ids"],
         )
         return train_dataset
-
-
-from torch.utils.data import DataLoader, TensorDataset
 
 
 class BertEncoder(BertPreTrainedModel):

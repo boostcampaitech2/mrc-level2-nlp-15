@@ -11,7 +11,7 @@ from typing import Callable, List, Dict, NoReturn, Tuple
 from elasticsearch import Elasticsearch
 
 import numpy as np
-from elastic_search import elastic
+from retrieval.elastic_search import elastic
 from datasets import (
     load_metric,
     load_from_disk,
@@ -32,7 +32,7 @@ from transformers import (
     set_seed,
 )
 
-from utils_qa import postprocess_qa_predictions, check_no_error
+from utils.utils_qa import postprocess_qa_predictions, check_no_error
 from trainer_qa import QuestionAnsweringTrainer
 from retrieval import SparseRetrieval, DPR
 
