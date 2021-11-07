@@ -1,6 +1,5 @@
 """
 Open-Domain Question Answering 을 수행하는 inference 코드 입니다.
-
 대부분의 로직은 train.py 와 비슷하나 retrieval, predict 부분이 추가되어 있습니다.
 """
 import logging
@@ -9,6 +8,7 @@ from typing import Callable, List, Dict, NoReturn, Tuple
 
 import numpy as np
 
+from sklearn.model_selection import KFold
 from datasets import (
     load_metric,
     load_from_disk,
@@ -31,6 +31,7 @@ from transformers import (
 
 from utils_qa import postprocess_qa_predictions, check_no_error
 from trainer_qa import QuestionAnsweringTrainer
+from models import RobertaWithLstmForQuestionAnswering
 
 from arguments import (
     ModelArguments,
@@ -39,6 +40,19 @@ from arguments import (
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+
+def run_from_csv(csv_path):
+    df = pd.read_csv(csv_path)
+    f = Features(
+        {
+            "context": Value(dtype="string", id=None),
+            "id": Value(dtype="string", id=None),
+            "question": Value(dtype="string", id=None),
+        }
+    )
+    datasets = DatasetDict({"validation": Dataset.from_pandas(df, features=f)})
+    return datasets
 
 
 def main():
@@ -51,7 +65,7 @@ def main():
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     training_args.do_train = True
-
+    training_args.do_eval = False
     print(f"model is from {model_args.model_name_or_path}")
     print(f"data is from {data_args.dataset_name}")
 
@@ -70,34 +84,39 @@ def main():
 
     # datasets = load_from_disk(data_args.dataset_name)
     # print(datasets)
-
+    model_name = model_args.model_name_or_path + "6/"
     # AutoConfig를 이용하여 pretrained model 과 tokenizer를 불러옵니다.
     # argument로 원하는 모델 이름을 설정하면 옵션을 바꿀 수 있습니다.
     config = AutoConfig.from_pretrained(
-        model_args.config_name
-        if model_args.config_name
-        else model_args.model_name_or_path,
+        model_args.config_name if model_args.config_name else model_name,
     )
     tokenizer = AutoTokenizer.from_pretrained(
-        model_args.tokenizer_name
-        if model_args.tokenizer_name
-        else model_args.model_name_or_path,
+        model_args.tokenizer_name if model_args.tokenizer_name else model_name,
         use_fast=True,
     )
-    model = AutoModelForQuestionAnswering.from_pretrained(
-        model_args.model_name_or_path,
-        from_tf=bool(".ckpt" in model_args.model_name_or_path),
-        config=config,
-    )
-
-    # True일 경우 : run passage retrieval
-    # retrieval: context의 개수가 top-k만큼으로 바뀐다.
     if data_args.eval_retrieval:  # trainset에 대한 evaluation을 진행
-        df = pd.read_csv("/opt/ml/custom/valid_dpr_b_16_speical_shuffle_e100_t50.csv")
-        for i in range(len(df)):
-            df["context_id"][i] = eval(df["context_id"][i])
-            df["answers"][i] = eval(df["answers"][i])
-
+        ############ NOTATE YOUR PATH TO THE DATASET!!!!! ############
+        df = pd.read_csv(
+            # "/opt/ml/mrc-level2-nlp-15/retrieval_elastic_cross_ensemble_5_one_on_three.csv"  # eval
+            # "/opt/ml/mrc-level2-nlp-15/eval_b16_special_shuffle_elastic_ce40_top5.csv"  # eval
+            # "/opt/ml/mrc-level2-nlp-15/test_retrieval_elastic_cross_ensemble_5_one_on_one.csv"  # predict
+            # "/opt/ml/mrc-level2-nlp-15/test_retrieval_elastic_cross_ensemble_5_one_on_three.csv"  # predict # 이게 제일 성능이 좋음
+            # "/opt/ml/mrc-level2-nlp-15/test_df50to5_sehyun.csv"  # predict
+            # "/opt/ml/mrc-level2-nlp-15/test_df50to5_sehyun_no_sep.csv"  # predict
+            # "/opt/ml/mrc-level2-nlp-15/test_original.csv"
+            "/opt/ml/mrc-level2-nlp-15/test_new_special_elastic.csv"
+        )
+        # df_len = len(df)
+        # for i in range(len(df)):
+        #     df["context_id"][i] = eval(df["context_id"][i])
+        #     df["answers"][i] = eval(df["answers"][i])
+        if training_args.do_eval:
+            for i in range(len(df)):
+                df["context_id"][i] = eval(df["context_id"][i])
+                df["answers"][i] = eval(df["answers"][i])
+        elif training_args.do_predict:
+            for i in range(len(df)):
+                df["context_id"][i] = eval(df["context_id"][i])
         if training_args.do_predict:
             f = Features(
                 {
@@ -126,10 +145,44 @@ def main():
 
         datasets = DatasetDict({"validation": Dataset.from_pandas(df, features=f)})
 
-    # eval or predict mrc model
-    print("Start Running MRC")
-    if training_args.do_eval or training_args.do_predict:
-        run_mrc(data_args, training_args, model_args, datasets, tokenizer, model)
+    total_logit = None
+    # Start KFold Inference
+    for i in range(data_args.num_fold):
+        model_path = f"{model_args.model_name_or_path}{i}/"
+        model = RobertaWithLstmForQuestionAnswering.from_pretrained(
+            model_path,
+            from_tf=bool(".ckpt" in model_path),
+            config=config,
+        )
+
+        # eval or predict mrc model
+        print("Start Running MRC")
+        fold_logit = run_mrc(
+            data_args, training_args, model_args, datasets, tokenizer, model
+        )
+
+        # 첫 Fold 시 total logit 초기화
+        if i == 0:
+            total_logit = list(fold_logit)
+        else:
+            total_logit[0] += fold_logit[0]
+            total_logit[1] += fold_logit[1]
+
+    # KFold model inference 시에만 작동하는 코드입니다.
+    # 최종 final model을 저장해 주는 코드입니다.
+    if data_args.num_fold > 1:
+        total_logit[0] /= data_args.num_fold
+        total_logit[1] /= data_args.num_fold
+        total_logit = tuple(total_logit)
+        run_mrc(
+            data_args,
+            training_args,
+            model_args,
+            datasets,
+            tokenizer,
+            model,
+            final=total_logit,
+        )
 
 
 def run_mrc(
@@ -139,7 +192,8 @@ def run_mrc(
     datasets: DatasetDict,
     tokenizer,
     model,
-) -> NoReturn:
+    final=None,
+) -> Tuple[np.ndarray, np.ndarray]:
 
     # eval 혹은 prediction에서만 사용함
     column_names = datasets["validation"].column_names  # ['context', 'id', 'question']
@@ -259,6 +313,7 @@ def run_mrc(
         train_dataset=None,
         eval_dataset=eval_dataset,
         eval_examples=datasets["validation"],
+        # per_device_eval_batch_size=32,
         tokenizer=tokenizer,
         data_collator=data_collator,
         post_process_function=post_processing_function,
@@ -268,16 +323,26 @@ def run_mrc(
     logger.info("*** Evaluate ***")
 
     #### eval dataset & eval example - predictions.json 생성됨
-    if training_args.do_predict:
-        predictions = trainer.predict(
+    if training_args.do_predict and not final:
+        predictions, output = trainer.predict(
             test_dataset=eval_dataset, test_examples=datasets["validation"]
         )
-
+        return output.predictions
         # predictions.json 은 postprocess_qa_predictions() 호출시 이미 저장됩니다.
+
+    # postprocess_qa_predictions 에서 저장되는 코드를 이용합니다.
+    elif final:
+        # output_dir에 final 폴더를 넣어서 구별해줍니다.
+        postprocess_qa_predictions(
+            datasets["validation"],
+            eval_dataset,
+            final,
+            max_answer_length=data_args.max_answer_length,
+            output_dir=training_args.output_dir + "final/",
+        )
         print(
             "No metric can be presented because there is no correct answer given. Job done!"
         )
-
     if training_args.do_eval:
         metrics = trainer.evaluate()
         metrics["eval_samples"] = len(eval_dataset)
