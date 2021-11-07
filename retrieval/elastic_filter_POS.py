@@ -5,9 +5,7 @@ import json
 from datasets import load_from_disk
 
 
-def get_doc_id(context, context_path="./data/wikipedia_documents.json"):
-    with open(context_path, "r", encoding="utf-8") as f:
-        wiki = json.load(f)
+def get_doc_id(context, wiki):
     for k, v in wiki.items():
         if v["text"] == context:
             return k
@@ -125,7 +123,7 @@ class elastic:
             self.es.indices.create(index=self.index_name, body=self.index_setting)
             helpers.bulk(self.es, docs)
 
-    def retrieve(self, query_or_dataset, topk):
+    def retrieve(self, query_or_dataset, topk, wiki):
         """
         Takes in dataset with queries and returns dataframe with information
         about top -k relevant passages
@@ -171,7 +169,7 @@ class elastic:
             context = []
             for docu in x:
                 score = docu["_score"]
-                doc_id = get_doc_id(docu["_source"]["text"])
+                doc_id = get_doc_id(docu["_source"]["text"], wiki)
                 tup = (doc_id, score)
                 context.append(tup)
             context = set(context)
@@ -186,6 +184,8 @@ class elastic:
 if __name__ == "__main__":
     dataset = load_from_disk("./data/train_dataset")
     test_dataset = load_from_disk("./data/test_dataset")
+    with open(context_path, "r", encoding="utf-8") as f:
+        wiki = json.load(f)
 
     ### Different datasets to use for retrieving the top related passages
     train_datasets = dataset["train"]
@@ -195,5 +195,5 @@ if __name__ == "__main__":
     ### Example of usage for validation dataset
     x = elastic("wikipedia")
     x.build_elatic()
-    p = x.retrieve(valid_datasets, 100)
+    p = x.retrieve(valid_datasets, 100, wiki)
     p.to_csv("./pos_filtered_elastic_top100_val.csv", index=False)
