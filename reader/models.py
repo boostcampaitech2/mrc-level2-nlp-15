@@ -37,6 +37,11 @@ class BertEncoder(BertPreTrainedModel):
 
 
 class RobertaWithLstmForQuestionAnswering(RobertaPreTrainedModel):
+    """
+    Making Similar model for RobertaForQuestionAnswering(RobertaPreTrainedModel) written in PyTorch.
+    https://github.com/huggingface/transformers/blob/master/src/transformers/models/roberta/modeling_roberta.py#L1464-L1556
+    """
+
     _keys_to_ignore_on_load_unexpected = [r"pooler"]
     _keys_to_ignore_on_load_missing = [r"position_ids"]
 
@@ -45,15 +50,18 @@ class RobertaWithLstmForQuestionAnswering(RobertaPreTrainedModel):
         self.num_labels = config.num_labels
 
         self.roberta = RobertaModel(config, add_pooling_layer=False)
-        self.qa_outputs = nn.Linear(config.hidden_size, config.num_labels)
+
+        # adding lstm layer
         self.lstm = nn.LSTM(
             input_size=config.hidden_size,
-            hidden_size=config.hidden_size // 2,
-            num_layers=1,
-            dropout=0.1,
+            hidden_size=config.hidden_size,
+            num_layers=2,
+            dropout=0.2,
             batch_first=True,
             bidirectional=True,
         )
+
+        self.qa_outputs = nn.Linear(config.hidden_size * 2, config.num_labels)
         self.init_weights()
 
     def forward(
