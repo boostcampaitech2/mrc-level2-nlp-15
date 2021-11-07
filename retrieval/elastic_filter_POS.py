@@ -184,7 +184,7 @@ class elastic:
 if __name__ == "__main__":
     dataset = load_from_disk("./data/train_dataset")
     test_dataset = load_from_disk("./data/test_dataset")
-    with open(context_path, "r", encoding="utf-8") as f:
+    with open("./data/wikipedia_documents.json", "r", encoding="utf-8") as f:
         wiki = json.load(f)
 
     ### Different datasets to use for retrieving the top related passages
